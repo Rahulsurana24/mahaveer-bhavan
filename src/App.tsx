@@ -5,6 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import MemberManagement from "./pages/admin/MemberManagement";
+import AdminManagement from "./pages/admin/AdminManagement";
+import EventManagement from "./pages/admin/EventManagement";
+import CommunicationCenter from "./pages/admin/CommunicationCenter";
+import FinancialManagement from "./pages/admin/FinancialManagement";
+import ReportsAnalytics from "./pages/admin/ReportsAnalytics";
+import SystemSettings from "./pages/admin/SystemSettings";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +24,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/members" element={<MemberManagement />} />
+          <Route path="/admin/admins" element={<AdminManagement />} />
+          <Route path="/admin/events" element={<EventManagement />} />
+          <Route path="/admin/communications" element={<CommunicationCenter />} />
+          <Route path="/admin/finances" element={<FinancialManagement />} />
+          <Route path="/admin/reports" element={<ReportsAnalytics />} />
+          <Route path="/admin/settings" element={<SystemSettings />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
