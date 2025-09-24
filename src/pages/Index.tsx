@@ -36,7 +36,12 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions with Animation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Quick Actions</h2>
           <div className="grid gap-3">
@@ -61,7 +66,12 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity with Animation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Recent Activity</CardTitle>
@@ -80,11 +90,11 @@ const Index = () => {
               <div className="flex-1">
                 <div className="font-medium text-sm">New Member Welcome Event</div>
                 <div className="text-xs text-muted-foreground">This Sunday</div>
-              </div>
-            </div>
+        </motion.div>
+        </motion.div>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
     </MainLayout>
   );
 };
