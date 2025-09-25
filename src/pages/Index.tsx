@@ -2,13 +2,19 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Calendar, MessageCircle, Users } from "lucide-react";
+import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const quickActions = [
-    { icon: CreditCard, label: "View ID Card", description: "Access your digital membership card" },
-    { icon: Calendar, label: "Upcoming Events", description: "Browse and register for events" },
-    { icon: MessageCircle, label: "Messages", description: "Connect with other members" },
-    { icon: Users, label: "Community", description: "Explore trust activities" },
+    { icon: CreditCard, label: "View ID Card", description: "Access your digital membership card", path: "/profile" },
+    { icon: Calendar, label: "Upcoming Events", description: "Browse and register for events", path: "/events" },
+    { icon: MessageCircle, label: "Messages", description: "Connect with other members", path: "/messages" },
+    { icon: Users, label: "Community", description: "Explore trust activities", path: "/gallery" },
   ];
 
   return (
@@ -42,29 +48,34 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Quick Actions</h2>
-          <div className="grid gap-3">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Card key={action.label} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Quick Actions</h2>
+            <div className="grid gap-3">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Card 
+                    key={action.label} 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors"
+                    onClick={() => navigate(action.path)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium">{action.label}</div>
+                          <div className="text-sm text-muted-foreground">{action.description}</div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{action.label}</div>
-                        <div className="text-sm text-muted-foreground">{action.description}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Recent Activity with Animation */}
         <motion.div
@@ -72,29 +83,30 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-            <CardDescription>Latest updates from the trust</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className="h-2 w-2 bg-primary rounded-full"></div>
-              <div className="flex-1">
-                <div className="font-medium text-sm">Monthly Meeting Scheduled</div>
-                <div className="text-xs text-muted-foreground">Tomorrow at 6:00 PM</div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
+              <CardDescription>Latest updates from the trust</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <div className="h-2 w-2 bg-primary rounded-full"></div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm">Monthly Meeting Scheduled</div>
+                  <div className="text-xs text-muted-foreground">Tomorrow at 6:00 PM</div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className="h-2 w-2 bg-accent rounded-full"></div>
-              <div className="flex-1">
-                <div className="font-medium text-sm">New Member Welcome Event</div>
-                <div className="text-xs text-muted-foreground">This Sunday</div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <div className="h-2 w-2 bg-accent rounded-full"></div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm">New Member Welcome Event</div>
+                  <div className="text-xs text-muted-foreground">This Sunday</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
-        </motion.div>
-          </CardContent>
-        </Card>
-        </motion.div>
+      </div>
     </MainLayout>
   );
 };

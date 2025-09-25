@@ -44,7 +44,6 @@ export const useNotifications = () => {
         await registration.showNotification(title, {
           icon: '/placeholder.svg',
           badge: '/placeholder.svg',
-          vibrate: [100, 50, 100],
           ...options,
         });
       } else {

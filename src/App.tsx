@@ -3,8 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/auth/Auth";
 import Events from "./pages/Events";
 import Messaging from "./pages/Messaging";
 import Donations from "./pages/Donations";
@@ -24,36 +27,100 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* Member Routes */}
-          <Route path="/events" element={<Events />} />
-          <Route path="/messages" element={<Messaging />} />
-          <Route path="/donations" element={<Donations />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/profile" element={<Profile />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/members" element={<MemberManagement />} />
-          <Route path="/admin/admins" element={<AdminManagement />} />
-          <Route path="/admin/events" element={<EventManagement />} />
-          <Route path="/admin/communications" element={<CommunicationCenter />} />
-          <Route path="/admin/finances" element={<FinancialManagement />} />
-          <Route path="/admin/reports" element={<ReportsAnalytics />} />
-          <Route path="/admin/settings" element={<SystemSettings />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Protected Member Routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/events" element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <Messaging />
+              </ProtectedRoute>
+            } />
+            <Route path="/donations" element={
+              <ProtectedRoute>
+                <Donations />
+              </ProtectedRoute>
+            } />
+            <Route path="/gallery" element={
+              <ProtectedRoute>
+                <Gallery />
+              </ProtectedRoute>
+            } />
+            <Route path="/notifications" element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            
+            {/* Protected Admin Routes */}
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute requireAdmin>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/members" element={
+              <ProtectedRoute requireAdmin>
+                <MemberManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/admins" element={
+              <ProtectedRoute requireSuperAdmin>
+                <AdminManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/events" element={
+              <ProtectedRoute requireAdmin>
+                <EventManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/communications" element={
+              <ProtectedRoute requireAdmin>
+                <CommunicationCenter />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/finances" element={
+              <ProtectedRoute requireAdmin>
+                <FinancialManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/reports" element={
+              <ProtectedRoute requireAdmin>
+                <ReportsAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings" element={
+              <ProtectedRoute requireAdmin>
+                <SystemSettings />
+              </ProtectedRoute>
+            } />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
