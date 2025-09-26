@@ -691,6 +691,10 @@ export type Database = {
         Args: { permission_name: string; user_auth_id: string }
         Returns: boolean
       }
+      create_admin_user: {
+        Args: { user_email: string; user_role?: string }
+        Returns: undefined
+      }
       generate_member_id: {
         Args: { membership_type: string }
         Returns: string
