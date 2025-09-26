@@ -15,6 +15,7 @@ import Donations from "./pages/Donations";
 import Gallery from "./pages/Gallery";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import IDCardPage from "./pages/IDCard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import MemberManagement from "./pages/admin/MemberManagement";
 import AdminManagement from "./pages/admin/AdminManagement";
@@ -71,6 +72,11 @@ const App = () => (
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/id-card" element={
+              <ProtectedRoute>
+                <IDCardPage />
               </ProtectedRoute>
             } />
             

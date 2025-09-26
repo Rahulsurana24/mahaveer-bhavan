@@ -15,7 +15,7 @@ const signUpSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
-  acceptTerms: z.boolean().refine(val => val === true, {
+  acceptTerms: z.coerce.boolean().refine(val => val === true, {
     message: 'You must accept the terms and conditions'
   })
 }).refine((data) => data.password === data.confirmPassword, {
@@ -38,6 +38,8 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema)
@@ -162,7 +164,8 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
       <div className="flex items-center space-x-2">
         <Checkbox
           id="acceptTerms"
-          {...register('acceptTerms')}
+          checked={watch('acceptTerms') || false}
+          onCheckedChange={(checked) => setValue('acceptTerms', !!checked)}
           className={errors.acceptTerms ? 'border-destructive' : ''}
         />
         <Label htmlFor="acceptTerms" className="text-sm font-normal">
