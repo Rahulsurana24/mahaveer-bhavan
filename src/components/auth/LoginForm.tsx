@@ -41,11 +41,20 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
       const { error } = await signIn(data.email, data.password);
       
       if (error) {
-        toast({
-          title: 'Login Failed',
-          description: error.message,
-          variant: 'destructive'
-        });
+        // Handle email not confirmed error
+        if (error.message.includes('Email not confirmed')) {
+          toast({
+            title: 'Email Not Verified',
+            description: 'Please check your email and click the verification link before signing in.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Login Failed',
+            description: error.message,
+            variant: 'destructive'
+          });
+        }
         return;
       }
 
