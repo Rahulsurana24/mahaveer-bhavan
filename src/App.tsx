@@ -16,6 +16,7 @@ import Gallery from "./pages/Gallery";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import IDCardPage from "./pages/IDCard";
+import AdminSetupPage from "./pages/AdminSetup";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import MemberManagement from "./pages/admin/MemberManagement";
 import AdminManagement from "./pages/admin/AdminManagement";
@@ -77,6 +78,11 @@ const App = () => (
             <Route path="/id-card" element={
               <ProtectedRoute>
                 <IDCardPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin-setup" element={
+              <ProtectedRoute>
+                <AdminSetupPage />
               </ProtectedRoute>
             } />
             
