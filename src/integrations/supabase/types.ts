@@ -699,6 +699,10 @@ export type Database = {
         Args: { membership_type: string }
         Returns: string
       }
+      setup_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

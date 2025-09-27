@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdminSetup } from '@/components/admin/AdminSetup';
+import { SuperAdminInstructions } from '@/components/admin/SuperAdminInstructions';
 
 const AdminSetupPage = () => {
   const { user } = useAuth();
@@ -22,6 +23,8 @@ const AdminSetupPage = () => {
             </p>
           </div>
 
+          <SuperAdminInstructions />
+          
           <AdminSetup />
 
           <Card className="p-6 max-w-2xl mx-auto">
