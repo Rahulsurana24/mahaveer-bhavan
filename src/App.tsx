@@ -25,6 +25,9 @@ import CommunicationCenter from "./pages/admin/CommunicationCenter";
 import FinancialManagement from "./pages/admin/FinancialManagement";
 import ReportsAnalytics from "./pages/admin/ReportsAnalytics";
 import SystemSettings from "./pages/admin/SystemSettings";
+import Trips from "./pages/Trips";
+import TripDetails from "./pages/TripDetails";
+import TripManagement from "./pages/admin/TripManagement";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +83,16 @@ const App = () => (
                 <IDCardPage />
               </ProtectedRoute>
             } />
+            <Route path="/trips" element={
+              <ProtectedRoute>
+                <Trips />
+              </ProtectedRoute>
+            } />
+            <Route path="/trips/:id" element={
+              <ProtectedRoute>
+                <TripDetails />
+              </ProtectedRoute>
+            } />
             <Route path="/admin-setup" element={
               <ProtectedRoute>
                 <AdminSetupPage />
@@ -125,6 +138,11 @@ const App = () => (
             <Route path="/admin/settings" element={
               <ProtectedRoute requireAdmin>
                 <SystemSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/trips" element={
+              <ProtectedRoute requireAdmin>
+                <TripManagement />
               </ProtectedRoute>
             } />
             

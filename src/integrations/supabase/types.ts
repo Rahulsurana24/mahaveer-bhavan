@@ -448,6 +448,155 @@ export type Database = {
           },
         ]
       }
+      trip_assignments: {
+        Row: {
+          additional_notes: string | null
+          bus_seat_number: string | null
+          created_at: string | null
+          flight_ticket_number: string | null
+          id: string
+          member_id: string | null
+          pnr_number: string | null
+          room_number: string | null
+          train_seat_number: string | null
+          trip_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          bus_seat_number?: string | null
+          created_at?: string | null
+          flight_ticket_number?: string | null
+          id?: string
+          member_id?: string | null
+          pnr_number?: string | null
+          room_number?: string | null
+          train_seat_number?: string | null
+          trip_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          bus_seat_number?: string | null
+          created_at?: string | null
+          flight_ticket_number?: string | null
+          id?: string
+          member_id?: string | null
+          pnr_number?: string | null
+          room_number?: string | null
+          train_seat_number?: string | null
+          trip_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_assignments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_assignments_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_attendance: {
+        Row: {
+          attended: boolean | null
+          created_at: string | null
+          id: string
+          marked_at: string | null
+          marked_by: string | null
+          member_id: string | null
+          notes: string | null
+          trip_id: string | null
+        }
+        Insert: {
+          attended?: boolean | null
+          created_at?: string | null
+          id?: string
+          marked_at?: string | null
+          marked_by?: string | null
+          member_id?: string | null
+          notes?: string | null
+          trip_id?: string | null
+        }
+        Update: {
+          attended?: boolean | null
+          created_at?: string | null
+          id?: string
+          marked_at?: string | null
+          marked_by?: string | null
+          member_id?: string | null
+          notes?: string | null
+          trip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_attendance_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_documents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          file_type: string | null
+          file_url: string
+          id: string
+          title: string
+          trip_id: string | null
+          updated_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          title: string
+          trip_id?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          title?: string
+          trip_id?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_documents_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_registrations: {
         Row: {
           id: string
@@ -500,12 +649,16 @@ export type Database = {
           end_date: string
           exclusions: string[] | null
           id: string
+          image_url: string | null
           inclusions: string[] | null
           itinerary: Json | null
           price: number
+          registration_deadline: string | null
+          registration_fee: number | null
           return_time: string
           start_date: string
           status: string | null
+          target_audience: string[] | null
           title: string
           transport_type: string
           updated_at: string | null
@@ -519,12 +672,16 @@ export type Database = {
           end_date: string
           exclusions?: string[] | null
           id?: string
+          image_url?: string | null
           inclusions?: string[] | null
           itinerary?: Json | null
           price: number
+          registration_deadline?: string | null
+          registration_fee?: number | null
           return_time: string
           start_date: string
           status?: string | null
+          target_audience?: string[] | null
           title: string
           transport_type: string
           updated_at?: string | null
@@ -538,12 +695,16 @@ export type Database = {
           end_date?: string
           exclusions?: string[] | null
           id?: string
+          image_url?: string | null
           inclusions?: string[] | null
           itinerary?: Json | null
           price?: number
+          registration_deadline?: string | null
+          registration_fee?: number | null
           return_time?: string
           start_date?: string
           status?: string | null
+          target_audience?: string[] | null
           title?: string
           transport_type?: string
           updated_at?: string | null

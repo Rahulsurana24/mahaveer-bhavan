@@ -1,4 +1,4 @@
-import { Home, Calendar, MessageCircle, User, MoreHorizontal } from "lucide-react";
+import { Home, Calendar, Plane, MessageCircle, User, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation, Link } from "react-router-dom";
 
@@ -11,9 +11,9 @@ interface BottomNavItem {
 const navItems: BottomNavItem[] = [
   { icon: <Home className="h-5 w-5" />, label: "Home", path: "/" },
   { icon: <Calendar className="h-5 w-5" />, label: "Events", path: "/events" },
+  { icon: <Plane className="h-5 w-5" />, label: "Trips", path: "/trips" },
   { icon: <MessageCircle className="h-5 w-5" />, label: "Messages", path: "/messages" },
   { icon: <User className="h-5 w-5" />, label: "Profile", path: "/profile" },
-  { icon: <MoreHorizontal className="h-5 w-5" />, label: "More", path: "/more" },
 ];
 
 const BottomNavigation = () => {

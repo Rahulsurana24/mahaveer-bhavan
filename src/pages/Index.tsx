@@ -1,7 +1,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Calendar, MessageCircle, Users } from "lucide-react";
+import { CreditCard, Calendar, Plane, MessageCircle, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -11,10 +11,10 @@ const Index = () => {
   const navigate = useNavigate();
   
   const quickActions = [
-    { icon: CreditCard, label: "View ID Card", description: "Access your digital membership card", path: "/profile" },
+    { icon: CreditCard, label: "View ID Card", description: "Access your digital membership card", path: "/id-card" },
     { icon: Calendar, label: "Upcoming Events", description: "Browse and register for events", path: "/events" },
-    { icon: MessageCircle, label: "Messages", description: "Connect with other members", path: "/messages" },
-    { icon: Users, label: "Community", description: "Explore trust activities", path: "/gallery" },
+    { icon: Plane, label: "Trips & Tours", description: "Explore and book trips", path: "/trips" },
+    { icon: MessageCircle, label: "Messages", description: "Chat with other members", path: "/messages" },
   ];
 
   return (
