@@ -285,52 +285,76 @@ export type Database = {
         Row: {
           address: string
           auth_id: string | null
+          city: string | null
+          country: string | null
           created_at: string | null
           date_of_birth: string
           email: string
           emergency_contact: Json
+          first_name: string | null
           full_name: string
           gender: string | null
           id: string
+          last_name: string | null
           membership_type: string
+          middle_name: string | null
           phone: string
           photo_url: string
+          postal_code: string | null
           qr_code: string | null
+          state: string | null
           status: string | null
+          street_address: string | null
           updated_at: string | null
         }
         Insert: {
           address: string
           auth_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth: string
           email: string
           emergency_contact: Json
+          first_name?: string | null
           full_name: string
           gender?: string | null
           id: string
+          last_name?: string | null
           membership_type: string
+          middle_name?: string | null
           phone: string
           photo_url: string
+          postal_code?: string | null
           qr_code?: string | null
+          state?: string | null
           status?: string | null
+          street_address?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string
           auth_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string
           email?: string
           emergency_contact?: Json
+          first_name?: string | null
           full_name?: string
           gender?: string | null
           id?: string
+          last_name?: string | null
           membership_type?: string
+          middle_name?: string | null
           phone?: string
           photo_url?: string
+          postal_code?: string | null
           qr_code?: string | null
+          state?: string | null
           status?: string | null
+          street_address?: string | null
           updated_at?: string | null
         }
         Relationships: []
