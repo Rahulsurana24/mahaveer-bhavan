@@ -737,6 +737,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      setup_test_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

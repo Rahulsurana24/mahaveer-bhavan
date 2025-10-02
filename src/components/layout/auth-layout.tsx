@@ -10,11 +10,14 @@ interface AuthLayoutProps {
 }
 
 const AuthLayout = ({ children, title }: AuthLayoutProps) => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    setIsDark(isDarkMode);
+    // Set dark mode as default
+    if (!document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.add('dark');
+    }
+    setIsDark(true);
   }, []);
 
   const toggleTheme = () => {
@@ -46,8 +49,8 @@ const AuthLayout = ({ children, title }: AuthLayoutProps) => {
         <div className="w-full max-w-md space-y-8">
           {title && (
             <div className="text-center space-y-4 animate-fade-in">
-              <div className="mx-auto h-24 w-24 bg-background/80 backdrop-blur-xl rounded-full flex items-center justify-center border-2 border-primary/20 shadow-2xl shadow-primary/20 hover:scale-110 transition-transform duration-500">
-                <img src={trustLogo} alt="Trust Logo" className="h-20 w-20 object-contain" />
+              <div className="mx-auto h-32 w-32 bg-background/80 backdrop-blur-xl rounded-full flex items-center justify-center border-2 border-primary/20 shadow-2xl shadow-primary/20 hover:scale-110 transition-transform duration-500">
+                <img src={trustLogo} alt="Trust Logo" className="h-28 w-28 object-contain" />
               </div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
                 {title}
