@@ -31,10 +31,16 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting },
+    watch
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema)
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange'
   });
+
+  const email = watch('email');
+  const password = watch('password');
+  const isFormValid = email && password && !errors.email && !errors.password;
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -136,7 +142,7 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
         </Button>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full" disabled={isSubmitting || !isFormValid}>
         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Sign In
       </Button>
