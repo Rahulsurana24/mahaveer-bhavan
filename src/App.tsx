@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
+import AdminAuth from "./pages/auth/AdminAuth";
 import Events from "./pages/Events";
 import Messaging from "./pages/Messaging";
 import Donations from "./pages/Donations";
@@ -41,6 +42,7 @@ const App = () => (
           <Routes>
             {/* Public Routes */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/admin/auth" element={<AdminAuth />} />
             
             {/* Protected Member Routes */}
             <Route path="/" element={

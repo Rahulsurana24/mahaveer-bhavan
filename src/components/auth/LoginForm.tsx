@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,7 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -147,18 +149,23 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
         Sign In
       </Button>
 
-      <div className="text-center">
-        <span className="text-sm text-muted-foreground">
-          Don't have an account?{' '}
-        </span>
-        <Button
+      <div className="flex items-center justify-between text-sm">
+        <button
           type="button"
-          variant="link"
-          className="px-0 font-normal"
           onClick={onSignUpClick}
+          className="text-primary hover:underline font-medium transition-colors"
         >
-          Sign up here
-        </Button>
+          Sign up
+        </button>
+        
+        <button
+          type="button"
+          onClick={() => navigate('/admin/auth')}
+          className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+        >
+          <ShieldCheck className="h-3 w-3" />
+          Admin
+        </button>
       </div>
     </form>
   );
