@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
 import AdminAuth from "./pages/auth/AdminAuth";
@@ -18,7 +19,7 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import IDCardPage from "./pages/IDCard";
 import AdminSetupPage from "./pages/AdminSetup";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import UnifiedDashboard from "./pages/admin/UnifiedDashboard";
 import MemberManagement from "./pages/admin/MemberManagement";
 import AdminManagement from "./pages/admin/AdminManagement";
 import EventManagement from "./pages/admin/EventManagement";
@@ -47,7 +48,12 @@ const App = () => (
             {/* Protected Member Routes */}
             <Route path="/" element={
               <ProtectedRoute>
-                <Index />
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
               </ProtectedRoute>
             } />
             <Route path="/events" element={
@@ -104,12 +110,12 @@ const App = () => (
             {/* Protected Admin Routes */}
             <Route path="/admin" element={
               <ProtectedRoute requireAdmin>
-                <AdminDashboard />
+                <UnifiedDashboard />
               </ProtectedRoute>
             } />
             <Route path="/admin/dashboard" element={
               <ProtectedRoute requireAdmin>
-                <AdminDashboard />
+                <UnifiedDashboard />
               </ProtectedRoute>
             } />
             <Route path="/admin/members" element={

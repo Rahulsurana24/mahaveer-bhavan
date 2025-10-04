@@ -1,13 +1,15 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Calendar, Plane, MessageCircle, Users } from "lucide-react";
+import { CreditCard, Calendar, Plane, MessageCircle, Heart, Image } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useMemberData } from "@/hooks/useMemberData";
 
 const Index = () => {
   const { user } = useAuth();
+  const { member, loading } = useMemberData();
   const navigate = useNavigate();
   
   const quickActions = [
@@ -15,6 +17,8 @@ const Index = () => {
     { icon: Calendar, label: "Upcoming Events", description: "Browse and register for events", path: "/events" },
     { icon: Plane, label: "Trips & Tours", description: "Explore and book trips", path: "/trips" },
     { icon: MessageCircle, label: "Messages", description: "Chat with other members", path: "/messages" },
+    { icon: Heart, label: "Make Donation", description: "Support our charitable work", path: "/donations" },
+    { icon: Image, label: "Gallery", description: "View photos and videos", path: "/gallery" },
   ];
 
   return (
@@ -22,8 +26,15 @@ const Index = () => {
       <div className="p-4 space-y-6">
         {/* Welcome Section */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Welcome to Mahaveer Bhavan</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Welcome, {member?.full_name || user?.email?.split('@')[0] || 'Member'}
+          </h1>
           <p className="text-muted-foreground">Sree Mahaveer Swami Charitable Trust</p>
+          {member && (
+            <div className="text-sm text-muted-foreground">
+              Member ID: {member.id} | {member.membership_type}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}

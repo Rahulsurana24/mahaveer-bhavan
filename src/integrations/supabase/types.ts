@@ -725,15 +725,23 @@ export type Database = {
         Args: { membership_type: string }
         Returns: string
       }
-      is_user_admin: {
+      get_user_role: {
+        Args: { user_auth_id: string }
+        Returns: string
+      }
+      is_admin_role: {
         Args: { user_auth_id: string }
         Returns: boolean
       }
-      is_user_superadmin: {
+      is_superadmin_role: {
         Args: { user_auth_id: string }
         Returns: boolean
       }
       setup_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      setup_super_admins: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
