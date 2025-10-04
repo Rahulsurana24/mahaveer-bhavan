@@ -1,47 +1,44 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card } from '@/components/ui/card';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { MainLayout } from '@/components/layout/main-layout';
 import { IDCard } from '@/components/ui/id-card';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { Loading } from '@/components/ui/loading';
+import { useMemberData } from '@/hooks/useMemberData';
 
 const IDCardPage = () => {
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { member, loading } = useMemberData();
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!profile) {
+  if (loading) {
     return (
-      <ProtectedRoute>
-        <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-md mx-auto p-6">
-            <h1 className="text-2xl font-bold text-center mb-4">Loading...</h1>
-          </Card>
+      <MainLayout title="Digital ID Card">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loading size="lg" text="Loading your ID card..." />
         </div>
-      </ProtectedRoute>
+      </MainLayout>
     );
   }
 
-  // Mock member data - in real app, this would come from the members table
-  const memberData = {
-    id: 'K-001',
-    full_name: profile.full_name,
-    membership_type: 'Karyakarta',
-    photo_url: '/placeholder.svg',
-    email: profile.email,
-    phone: '+91 9876543210'
-  };
+  if (!member) {
+    return (
+      <MainLayout title="Digital ID Card">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Member profile not found. Please complete your registration.</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
-    <ProtectedRoute>
+    <MainLayout title="Digital ID Card">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-center mb-8">Digital ID Card</h1>
-        <IDCard member={memberData} />
+        <IDCard member={member} />
       </div>
-    </ProtectedRoute>
+    </MainLayout>
   );
 };
 
