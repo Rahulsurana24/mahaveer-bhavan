@@ -12,6 +12,12 @@ interface MemberData {
   qr_code: string | null;
   status: string;
   created_at: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  gender: string | null;
+  emergency_contact: any;
 }
 
 export const useMemberData = () => {
