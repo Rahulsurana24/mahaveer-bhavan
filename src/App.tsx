@@ -30,6 +30,7 @@ import SystemSettings from "./pages/admin/SystemSettings";
 import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
 import TripManagement from "./pages/admin/TripManagement";
+import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,13 @@ const App = () => (
             {/* Public Routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
+            
+            {/* Password Change Route */}
+            <Route path="/change-password" element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            } />
             
             {/* Protected Member Routes */}
             <Route path="/" element={

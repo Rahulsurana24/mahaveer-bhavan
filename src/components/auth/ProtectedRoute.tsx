@@ -37,14 +37,19 @@ export const ProtectedRoute = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
+  // Check if password change is required
+  if (profile?.needs_password_change && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
   // Check admin requirement
   if (requireAdmin && (!role || !['admin', 'superadmin', 'management_admin'].includes(role.name))) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Check super admin requirement
   if (requireSuperAdmin && (!role || role.name !== 'superadmin')) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

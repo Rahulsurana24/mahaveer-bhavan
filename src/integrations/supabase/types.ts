@@ -644,6 +644,7 @@ export type Database = {
           is_active: boolean | null
           last_login: string | null
           login_count: number | null
+          needs_password_change: boolean | null
           role_id: string | null
           updated_at: string | null
         }
@@ -656,6 +657,7 @@ export type Database = {
           is_active?: boolean | null
           last_login?: string | null
           login_count?: number | null
+          needs_password_change?: boolean | null
           role_id?: string | null
           updated_at?: string | null
         }
@@ -668,6 +670,7 @@ export type Database = {
           is_active?: boolean | null
           last_login?: string | null
           login_count?: number | null
+          needs_password_change?: boolean | null
           role_id?: string | null
           updated_at?: string | null
         }

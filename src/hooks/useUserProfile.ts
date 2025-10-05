@@ -13,6 +13,7 @@ interface UserProfile {
   last_login: string | null;
   created_at: string;
   updated_at: string;
+  needs_password_change?: boolean;
 }
 
 interface UserRole {
