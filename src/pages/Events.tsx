@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,110 +34,112 @@ import {
   AlertCircle,
   Info
 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useMemberData } from '@/hooks/useMemberData';
+import { useToast } from '@/hooks/use-toast';
+import { Loading } from '@/components/ui/loading';
 
 const Events = () => {
+  const { member } = useMemberData();
+  const { toast } = useToast();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [events, setEvents] = useState<any[]>([]);
+  const [registrations, setRegistrations] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [registering, setRegistering] = useState(false);
 
-  const events = [
-    {
-      id: "event-1",
-      title: "Monthly Satsang",
-      description: "Join us for our monthly spiritual gathering with discourse, meditation, and community fellowship.",
-      type: "Religious",
-      date: "2024-01-15",
-      time: "6:00 PM - 8:00 PM",
-      location: "Main Hall, Trust Building",
-      capacity: 200,
-      registered: 145,
-      fees: 0,
-      status: "upcoming",
-      image: "/placeholder.svg",
-      organizer: {
-        name: "Trust Committee",
-        avatar: "/placeholder.svg"
-      },
-      tags: ["spiritual", "community", "monthly"],
-      requirements: "Please arrive 15 minutes early. Modest dress code required.",
-      isRegistered: true
-    },
-    {
-      id: "event-2",
-      title: "Charity Food Drive",
-      description: "Help us distribute food to underprivileged families in our community. Volunteers needed for preparation and distribution.",
-      type: "Social",
-      date: "2024-01-20",
-      time: "9:00 AM - 2:00 PM",
-      location: "Community Center",
-      capacity: 100,
-      registered: 89,
-      fees: 0,
-      status: "upcoming",
-      image: "/placeholder.svg",
-      organizer: {
-        name: "Seva Committee",
-        avatar: "/placeholder.svg"
-      },
-      tags: ["charity", "community service", "volunteering"],
-      requirements: "Volunteers should be available for the full duration.",
-      isRegistered: false
-    },
-    {
-      id: "event-3",
-      title: "Palitana Temple Visit",
-      description: "Spiritual pilgrimage to the sacred Jain temples of Palitana. Transportation and meals included.",
-      type: "Trip",
-      date: "2024-01-25",
-      time: "6:00 AM - 8:00 PM",
-      location: "Palitana, Gujarat",
-      capacity: 80,
-      registered: 67,
-      fees: 1500,
-      status: "upcoming",
-      image: "/placeholder.svg",
-      organizer: {
-        name: "Pilgrimage Committee",
-        avatar: "/placeholder.svg"
-      },
-      tags: ["pilgrimage", "spiritual", "travel"],
-      requirements: "Valid ID required. Comfortable walking shoes recommended.",
-      isRegistered: true
-    },
-    {
-      id: "event-4",
-      title: "Cultural Program",
-      description: "Traditional music and dance performances celebrating our rich cultural heritage.",
-      type: "Cultural",
-      date: "2024-01-12",
-      time: "7:00 PM - 9:00 PM",
-      location: "Main Auditorium",
-      capacity: 300,
-      registered: 234,
-      fees: 0,
-      status: "past",
-      image: "/placeholder.svg",
-      organizer: {
-        name: "Cultural Committee",
-        avatar: "/placeholder.svg"
-      },
-      tags: ["culture", "music", "dance"],
-      requirements: "Free entry. Refreshments will be served.",
-      isRegistered: true
+  useEffect(() => {
+    loadEvents();
+  }, [member]);
+
+  const loadEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('is_published', true)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      setEvents(data || []);
+
+      if (member?.id) {
+        const { data: regs } = await supabase
+          .from('event_registrations')
+          .select('event_id')
+          .eq('member_id', member.id);
+
+        setRegistrations(new Set(regs?.map(r => r.event_id) || []));
+      }
+    } catch (error) {
+      console.error('Error loading events:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleRegister = async (eventId: string) => {
+    if (!member?.id) {
+      toast({
+        title: 'Error',
+        description: 'Please login to register',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setRegistering(true);
+    try {
+      const { error } = await supabase
+        .from('event_registrations')
+        .insert({
+          event_id: eventId,
+          member_id: member.id,
+          status: 'registered'
+        });
+
+      if (error) throw error;
+
+      setRegistrations(prev => new Set(prev).add(eventId));
+      toast({
+        title: 'Success',
+        description: 'Successfully registered for event'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to register',
+        variant: 'destructive'
+      });
+    } finally {
+      setRegistering(false);
+    }
+  };
 
   const getEventsByTab = (tab: string) => {
+    const now = new Date();
     switch (tab) {
       case "upcoming":
-        return events.filter(e => e.status === "upcoming");
+        return events.filter(e => new Date(e.date) >= now);
       case "registered":
-        return events.filter(e => e.isRegistered);
+        return events.filter(e => registrations.has(e.id));
       case "past":
-        return events.filter(e => e.status === "past");
+        return events.filter(e => new Date(e.date) < now);
       default:
         return events;
     }
   };
+
+  if (loading) {
+    return (
+      <MainLayout title="Events">
+        <div className="flex justify-center py-12">
+          <Loading size="lg" text="Loading events..." />
+        </div>
+      </MainLayout>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -230,8 +232,9 @@ const Events = () => {
           <TabsContent value={activeTab} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getEventsByTab(activeTab).map((event) => {
-                const availability = getAvailabilityStatus(event.registered, event.capacity);
-                const AvailabilityIcon = availability.icon;
+                const isRegistered = registrations.has(event.id);
+                const eventDate = new Date(event.date);
+                const isPast = eventDate < new Date();
                 
                 return (
                   <Card 
@@ -239,19 +242,18 @@ const Events = () => {
                     className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                     onClick={() => setSelectedEvent(event)}
                   >
-                    <div className="aspect-video relative">
-                      <img 
-                        src={event.image} 
-                        alt={event.title}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="aspect-video relative bg-muted">
+                      {event.image_url && (
+                        <img 
+                          src={event.image_url} 
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                       <div className="absolute top-2 left-2">
                         {getTypeBadge(event.type)}
                       </div>
-                      <div className="absolute top-2 right-2">
-                        {getStatusBadge(event.status)}
-                      </div>
-                      {event.isRegistered && (
+                      {isRegistered && (
                         <div className="absolute bottom-2 right-2">
                           <Badge variant="default" className="bg-green-500">
                             <CheckCircle className="h-3 w-3 mr-1" />
@@ -272,7 +274,7 @@ const Events = () => {
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{event.date}</span>
+                          <span>{eventDate.toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
@@ -284,34 +286,32 @@ const Events = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      {event.capacity && (
+                        <div className="flex items-center gap-2 text-sm">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {event.registered}/{event.capacity}
-                          </span>
-                          <AvailabilityIcon className={`h-4 w-4 ${availability.color}`} />
+                          <span>Capacity: {event.capacity}</span>
                         </div>
-                        {event.fees > 0 && (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">₹{event.fees}</span>
-                          </div>
-                        )}
-                      </div>
+                      )}
 
-                      <div className="flex gap-2">
-                        {event.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {event.tags.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{event.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
+                      {event.fees > 0 && (
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">₹{event.fees}</span>
+                        </div>
+                      )}
+
+                      {!isRegistered && !isPast && (
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRegister(event.id);
+                          }}
+                          className="w-full"
+                          disabled={registering}
+                        >
+                          Register Now
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 );
