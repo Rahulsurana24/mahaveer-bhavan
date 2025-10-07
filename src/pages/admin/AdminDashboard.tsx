@@ -1,28 +1,108 @@
+import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Calendar, DollarSign, MessageSquare, TrendingUp, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { Loading } from "@/components/ui/loading";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const AdminDashboard = () => {
-  const stats = [
-    { title: "Total Members", value: "1,234", icon: Users, change: "+5.2%", changeType: "positive" },
-    { title: "Active Events", value: "12", icon: Calendar, change: "+2", changeType: "positive" },
-    { title: "Monthly Donations", value: "₹2,45,000", icon: DollarSign, change: "+12.5%", changeType: "positive" },
-    { title: "Messages Sent", value: "8,456", icon: MessageSquare, change: "+18.2%", changeType: "positive" },
-  ];
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    activeEvents: 0,
+    monthlyDonations: 0,
+    messagesSent: 0,
+  });
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const recentActivities = [
-    { type: "member", message: "New member registration: Raj Patel", time: "2 minutes ago" },
-    { type: "event", message: "Satsang event updated with new venue", time: "15 minutes ago" },
-    { type: "donation", message: "Donation received: ₹5,000 from Meera Shah", time: "1 hour ago" },
-    { type: "system", message: "WhatsApp integration restored", time: "2 hours ago" },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const upcomingEvents = [
-    { title: "Monthly Satsang", date: "2024-01-15", participants: 145 },
-    { title: "Charity Drive", date: "2024-01-20", participants: 89 },
-    { title: "Temple Visit", date: "2024-01-25", participants: 67 },
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch total members
+      const { count: membersCount } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch active events
+      const { count: eventsCount } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .gte('date', new Date().toISOString());
+
+      // Fetch monthly donations
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const { data: donations } = await supabase
+        .from('donations')
+        .select('amount')
+        .gte('created_at', startOfMonth.toISOString());
+
+      const totalDonations = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+
+      // Fetch messages count
+      const { count: messagesCount } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfMonth.toISOString());
+
+      // Fetch upcoming events with registration counts
+      const { data: events } = await supabase
+        .from('events')
+        .select(`
+          *,
+          event_registrations(count)
+        `)
+        .eq('is_published', true)
+        .gte('date', new Date().toISOString())
+        .order('date', { ascending: true })
+        .limit(3);
+
+      setStats({
+        totalMembers: membersCount || 0,
+        activeEvents: eventsCount || 0,
+        monthlyDonations: totalDonations,
+        messagesSent: messagesCount || 0,
+      });
+
+      setUpcomingEvents(events || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout title="Dashboard">
+        <div className="flex justify-center items-center h-64">
+          <Loading size="lg" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const statsData = [
+    { title: "Total Members", value: stats.totalMembers.toString(), icon: Users },
+    { title: "Active Events", value: stats.activeEvents.toString(), icon: Calendar },
+    { title: "Monthly Donations", value: `₹${stats.monthlyDonations.toLocaleString('en-IN')}`, icon: DollarSign },
+    { title: "Messages Sent", value: stats.messagesSent.toString(), icon: MessageSquare },
   ];
 
   return (
@@ -30,7 +110,7 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => {
+          {statsData.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.title}>
@@ -42,11 +122,6 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    <span className="text-primary">{stat.change}</span>
-                    <span className="ml-1">from last month</span>
-                  </div>
                 </CardContent>
               </Card>
             );
@@ -54,48 +129,60 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      {activity.type === "member" && <Users className="h-4 w-4 text-blue-500" />}
-                      {activity.type === "event" && <Calendar className="h-4 w-4 text-green-500" />}
-                      {activity.type === "donation" && <DollarSign className="h-4 w-4 text-yellow-500" />}
-                      {activity.type === "system" && <AlertCircle className="h-4 w-4 text-red-500" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Upcoming Events */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Upcoming Events</CardTitle>
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/admin/events'}>
+                View All
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {upcomingEvents.map((event, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">{event.date}</p>
+                {upcomingEvents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No upcoming events</p>
+                ) : (
+                  upcomingEvents.map((event) => (
+                    <div key={event.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{event.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(event.date), 'MMM dd, yyyy')} at {event.time}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">
+                        {event.event_registrations?.[0]?.count || 0} registered
+                      </Badge>
                     </div>
-                    <Badge variant="secondary">{event.participants} registered</Badge>
-                  </div>
-                ))}
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Active Members</span>
+                  <span className="font-bold">{stats.totalMembers}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">This Month's Donations</span>
+                  <span className="font-bold">₹{stats.monthlyDonations.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Published Events</span>
+                  <span className="font-bold">{stats.activeEvents}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Messages This Month</span>
+                  <span className="font-bold">{stats.messagesSent}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -108,19 +195,35 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => window.location.href = '/admin/members'}
+              >
                 <Users className="h-6 w-6 mb-2" />
-                Add Member
+                Manage Members
               </Button>
-              <Button variant="outline" className="h-20 flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => window.location.href = '/admin/events'}
+              >
                 <Calendar className="h-6 w-6 mb-2" />
-                Create Event
+                Manage Events
               </Button>
-              <Button variant="outline" className="h-20 flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => window.location.href = '/admin/communications'}
+              >
                 <MessageSquare className="h-6 w-6 mb-2" />
-                Send Message
+                Communications
               </Button>
-              <Button variant="outline" className="h-20 flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => window.location.href = '/admin/finances'}
+              >
                 <DollarSign className="h-6 w-6 mb-2" />
                 View Donations
               </Button>
