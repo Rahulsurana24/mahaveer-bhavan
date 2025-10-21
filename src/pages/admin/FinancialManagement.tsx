@@ -531,6 +531,104 @@ const FinancialManagement = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* Donation Verification Tab */}
+              <TabsContent value="verification">
+                <DonationVerification />
+              </TabsContent>
+
+              {/* Reports Tab */}
+              <TabsContent value="reports" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Monthly Trend Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Monthly Donation Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Month</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Count</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {monthlyStats.slice(0, 6).map((stat) => (
+                            <TableRow key={stat.month}>
+                              <TableCell>{stat.month}</TableCell>
+                              <TableCell className="font-medium">₹{stat.donations.toLocaleString()}</TableCell>
+                              <TableCell>{stat.count}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+
+                  {/* Top Donors Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Top 5 Donors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {topDonors.slice(0, 5).map((donor, index) => (
+                          <div key={donor.name} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                                {index + 1}
+                              </div>
+                              <div>
+                                <div className="font-medium text-sm">{donor.name}</div>
+                                <div className="text-xs text-muted-foreground">{donor.donations} donations</div>
+                              </div>
+                            </div>
+                            <div className="text-sm font-bold">₹{donor.amount.toLocaleString()}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Purpose-wise breakdown */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Donation Purpose Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {['General Fund', 'Temple Maintenance', 'Charity Programs', 'Education Support', 'Event Sponsorship'].map((purpose) => {
+                        const purposeDonations = donations.filter(d => d.purpose === purpose && d.status === 'verified');
+                        const amount = purposeDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
+                        const percentage = stats.total > 0 ? (amount / stats.total) * 100 : 0;
+                        
+                        return (
+                          <div key={purpose} className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>{purpose}</span>
+                              <span className="font-medium">₹{amount.toLocaleString()} ({percentage.toFixed(1)}%)</span>
+                            </div>
+                            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full transition-all"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Payment Configuration Tab */}
+              <TabsContent value="configuration">
+                <PaymentConfiguration />
+              </TabsContent>
             </Tabs>
           </>
         )}
