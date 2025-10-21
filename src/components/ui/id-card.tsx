@@ -3,8 +3,9 @@ import { Card } from '@/components/ui/card';
 import { generateMemberQRCode } from '@/utils/qrCode';
 import { generateIDCardPDF } from '@/utils/pdfGenerator';
 import { Button } from '@/components/ui/button';
-import { Download, Share2 } from 'lucide-react';
+import { Download, Share2, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import html2canvas from 'html2canvas';
 
 interface IDCardProps {
   member: {
@@ -45,6 +46,49 @@ export const IDCard = ({ member }: IDCardProps) => {
       toast({
         title: 'Error',
         description: 'Failed to download ID card',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDownloadJPG = async () => {
+    try {
+      const cardElement = document.getElementById('member-id-card');
+      if (!cardElement) {
+        throw new Error('ID card element not found');
+      }
+
+      // Capture the card as canvas
+      const canvas = await html2canvas(cardElement, {
+        backgroundColor: null,
+        scale: 2, // Higher resolution
+        logging: false,
+      });
+
+      // Convert canvas to blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          // Create download link
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${member.full_name}-id-card.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          toast({
+            title: 'Success',
+            description: 'ID card image downloaded successfully!'
+          });
+        }
+      }, 'image/jpeg', 0.95);
+    } catch (error) {
+      console.error('JPG download error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to download ID card image',
         variant: 'destructive'
       });
     }
@@ -116,10 +160,14 @@ export const IDCard = ({ member }: IDCardProps) => {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 justify-center">
+      <div className="flex flex-wrap gap-2 justify-center">
         <Button onClick={handleDownload} className="gap-2">
           <Download className="w-4 h-4" />
           Download PDF
+        </Button>
+        <Button onClick={handleDownloadJPG} variant="outline" className="gap-2">
+          <Image className="w-4 h-4" />
+          Download JPG
         </Button>
         <Button onClick={handleShare} variant="outline" className="gap-2">
           <Share2 className="w-4 h-4" />
