@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Users, FileText, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, FileText, Calendar, ClipboardList } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +17,7 @@ const TripManagement = () => {
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -106,6 +108,14 @@ const TripManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/admin/trips/${trip.id}/assignments`)}
+                            title="Manage Assignments"
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </Button>
                           <Button size="sm" variant="outline">
                             <Users className="h-4 w-4" />
                           </Button>
