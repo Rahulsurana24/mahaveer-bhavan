@@ -49,6 +49,7 @@
     "face-api.js": "^0.22.2",
     "framer-motion": "^12.23.21",
     "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
     "input-otp": "^1.4.2",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.462.0",
