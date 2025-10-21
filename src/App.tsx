@@ -32,6 +32,7 @@ import TripDetails from "./pages/TripDetails";
 import TripManagement from "./pages/admin/TripManagement";
 import TripAssignments from "./pages/admin/TripAssignments";
 import AttendanceTracking from "./pages/admin/AttendanceTracking";
+import SystemLogs from "./pages/admin/SystemLogs";
 import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
@@ -176,6 +177,11 @@ const App = () => (
             <Route path="/admin/attendance" element={
               <ProtectedRoute requireAdmin>
                 <AttendanceTracking />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/logs" element={
+              <ProtectedRoute requireAdmin>
+                <SystemLogs />
               </ProtectedRoute>
             } />
             
