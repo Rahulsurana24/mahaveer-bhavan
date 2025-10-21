@@ -21,6 +21,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Select,
   SelectContent,
@@ -34,10 +45,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter } from "lucide-react";
+import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter, CheckCircle, XCircle, Clock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
 const MemberManagement = () => {
@@ -47,9 +59,13 @@ const MemberManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [membershipTypeFilter, setMembershipTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -65,6 +81,7 @@ const MemberManagement = () => {
     country: "India",
   });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchMembers();
@@ -72,7 +89,7 @@ const MemberManagement = () => {
 
   useEffect(() => {
     filterMembers();
-  }, [searchTerm, membershipTypeFilter, statusFilter, members]);
+  }, [searchTerm, membershipTypeFilter, statusFilter, members, activeTab]);
 
   const fetchMembers = async () => {
     try {
@@ -112,6 +129,17 @@ const MemberManagement = () => {
 
     if (statusFilter !== "all") {
       filtered = filtered.filter(member => member.status === statusFilter);
+    }
+
+    // Filter by active tab
+    if (activeTab === "pending") {
+      filtered = filtered.filter(member => member.status === "pending_approval");
+    } else if (activeTab === "active") {
+      filtered = filtered.filter(member => member.status === "active");
+    } else if (activeTab === "rejected") {
+      filtered = filtered.filter(member => member.status === "rejected");
+    } else if (activeTab === "inactive") {
+      filtered = filtered.filter(member => member.status === "inactive" || member.status === "suspended");
     }
 
     setFilteredMembers(filtered);
@@ -233,6 +261,84 @@ const MemberManagement = () => {
     }
   };
 
+  const handleApproveMember = async () => {
+    if (!selectedMember || !user) return;
+
+    try {
+      const { error } = await supabase.rpc('approve_member', {
+        p_member_id: selectedMember.id,
+        p_approved_by: user.id
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Member Approved",
+        description: `${selectedMember.full_name} has been approved successfully.`,
+      });
+
+      setIsApproveDialogOpen(false);
+      setSelectedMember(null);
+      fetchMembers();
+    } catch (error: any) {
+      console.error('Error approving member:', error);
+      toast({
+        title: "Approval Failed",
+        description: error.message || "Failed to approve member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectMember = async () => {
+    if (!selectedMember || !user || !rejectionReason.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Rejection reason is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.rpc('reject_member', {
+        p_member_id: selectedMember.id,
+        p_rejected_by: user.id,
+        p_rejection_reason: rejectionReason.trim()
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Member Rejected",
+        description: `${selectedMember.full_name} has been rejected.`,
+      });
+
+      setIsRejectDialogOpen(false);
+      setSelectedMember(null);
+      setRejectionReason("");
+      fetchMembers();
+    } catch (error: any) {
+      console.error('Error rejecting member:', error);
+      toast({
+        title: "Rejection Failed",
+        description: error.message || "Failed to reject member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openApproveDialog = (member: any) => {
+    setSelectedMember(member);
+    setIsApproveDialogOpen(true);
+  };
+
+  const openRejectDialog = (member: any) => {
+    setSelectedMember(member);
+    setRejectionReason("");
+    setIsRejectDialogOpen(true);
+  };
+
   const openEditDialog = (member: any) => {
     setSelectedMember(member);
     setFormData({
@@ -292,12 +398,27 @@ const MemberManagement = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive"> = {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       active: "default",
       inactive: "secondary",
       suspended: "destructive",
+      pending_approval: "outline",
+      rejected: "destructive",
     };
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
+    const icons: Record<string, any> = {
+      active: CheckCircle,
+      pending_approval: Clock,
+      rejected: XCircle,
+      inactive: User,
+      suspended: XCircle,
+    };
+    const Icon = icons[status] || User;
+    return (
+      <Badge variant={variants[status] || "secondary"} className="flex items-center gap-1 w-fit">
+        <Icon className="h-3 w-3" />
+        {status === "pending_approval" ? "Pending" : status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
 
   const getMembershipBadge = (type: string) => {
@@ -314,6 +435,11 @@ const MemberManagement = () => {
       </Badge>
     );
   };
+
+  const getPendingCount = () => members.filter(m => m.status === "pending_approval").length;
+  const getActiveCount = () => members.filter(m => m.status === "active").length;
+  const getRejectedCount = () => members.filter(m => m.status === "rejected").length;
+  const getInactiveCount = () => members.filter(m => m.status === "inactive" || m.status === "suspended").length;
 
   if (loading) {
     return (
@@ -385,6 +511,8 @@ const MemberManagement = () => {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
@@ -393,80 +521,229 @@ const MemberManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Members Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Members ({filteredMembers.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Membership</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMembers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
-                        No members found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredMembers.map((member) => (
-                      <TableRow key={member.id}>
-                        <TableCell className="font-mono text-sm">{member.id}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{member.full_name}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <p>{member.email}</p>
-                            <p className="text-muted-foreground">{member.phone}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getMembershipBadge(member.membership_type)}</TableCell>
-                        <TableCell>{getStatusBadge(member.status)}</TableCell>
-                        <TableCell>{format(new Date(member.created_at), 'MMM dd, yyyy')}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditDialog(member)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => handleDeleteMember(member.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+        {/* Members Tabs and Table */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="all">
+              All Members ({members.length})
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="relative">
+              Pending Approval
+              {getPendingCount() > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 min-w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                  {getPendingCount()}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="active">
+              Active ({getActiveCount()})
+            </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected ({getRejectedCount()})
+            </TabsTrigger>
+            <TabsTrigger value="inactive">
+              Inactive ({getInactiveCount()})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={activeTab} className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {activeTab === "all" && "All Members"}
+                  {activeTab === "pending" && "Pending Approvals"}
+                  {activeTab === "active" && "Active Members"}
+                  {activeTab === "rejected" && "Rejected Members"}
+                  {activeTab === "inactive" && "Inactive Members"}
+                  {" "}({filteredMembers.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activeTab === "pending" && filteredMembers.length > 0 && (
+                  <Alert className="mb-4">
+                    <Clock className="h-4 w-4" />
+                    <AlertDescription>
+                      {filteredMembers.length} member{filteredMembers.length > 1 ? 's' : ''} awaiting your approval
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredMembers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                            No members found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredMembers.map((member) => (
+                          <TableRow key={member.id}>
+                            <TableCell className="font-mono text-sm">{member.id}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{member.full_name}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <p>{member.email}</p>
+                                <p className="text-muted-foreground">{member.phone}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{getMembershipBadge(member.membership_type)}</TableCell>
+                            <TableCell>{getStatusBadge(member.status)}</TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <p>{format(new Date(member.created_at), 'MMM dd, yyyy')}</p>
+                                {member.status === "rejected" && member.rejection_reason && (
+                                  <p className="text-xs text-destructive">Reason: {member.rejection_reason}</p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {member.status === "pending_approval" && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => openApproveDialog(member)} className="text-green-600">
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Approve
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => openRejectDialog(member)} className="text-destructive">
+                                        <XCircle className="h-4 w-4 mr-2" />
+                                        Reject
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  <DropdownMenuItem onClick={() => openEditDialog(member)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => handleDeleteMember(member.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Approve Member Dialog */}
+        <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Approve Member</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to approve this member?
+              </DialogDescription>
+            </DialogHeader>
+            {selectedMember && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Member Details:</p>
+                  <div className="bg-muted p-4 rounded-lg space-y-1 text-sm">
+                    <p><span className="font-medium">Name:</span> {selectedMember.full_name}</p>
+                    <p><span className="font-medium">Email:</span> {selectedMember.email}</p>
+                    <p><span className="font-medium">Phone:</span> {selectedMember.phone}</p>
+                    <p><span className="font-medium">Membership Type:</span> {selectedMember.membership_type}</p>
+                  </div>
+                </div>
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    The member will be notified via email and can access all features.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleApproveMember} className="bg-green-600 hover:bg-green-700">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve Member
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reject Member Dialog */}
+        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Member</DialogTitle>
+              <DialogDescription>
+                Please provide a reason for rejection. This will be shared with the member.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedMember && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Member: {selectedMember.full_name}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rejection_reason">Rejection Reason *</Label>
+                  <Textarea
+                    id="rejection_reason"
+                    placeholder="Enter reason for rejection..."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    The member will be notified with this reason.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleRejectMember} 
+                variant="destructive"
+                disabled={!rejectionReason.trim()}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Reject Member
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Create Member Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
