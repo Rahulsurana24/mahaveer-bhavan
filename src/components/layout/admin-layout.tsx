@@ -10,7 +10,9 @@ import {
   MessageSquare, 
   DollarSign, 
   BarChart3, 
-  Settings 
+  Settings,
+  ClipboardCheck,
+  FileText
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -24,9 +26,11 @@ const adminNavItems = [
   { icon: UserCog, label: "Admins", path: "/admin/admins" },
   { icon: Calendar, label: "Events", path: "/admin/events" },
   { icon: Plane, label: "Trips", path: "/admin/trips" },
+  { icon: ClipboardCheck, label: "Attendance", path: "/admin/attendance" },
   { icon: MessageSquare, label: "Communications", path: "/admin/communications" },
   { icon: DollarSign, label: "Finances", path: "/admin/finances" },
   { icon: BarChart3, label: "Reports", path: "/admin/reports" },
+  { icon: FileText, label: "System Logs", path: "/admin/logs" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
 
