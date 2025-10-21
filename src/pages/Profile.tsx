@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PhotoCropDialog } from "@/components/ui/photo-crop-dialog";
 import { 
   User, 
   Mail, 
@@ -29,6 +30,7 @@ import { Loading } from "@/components/ui/loading";
 const Profile = () => {
   const { member, loading, error } = useMemberData();
   const [isEditing, setIsEditing] = useState(false);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -49,26 +51,29 @@ const Profile = () => {
     }
   }, [member]);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !member) return;
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    if (!member) return;
 
     try {
-      setUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${member.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${member.id}_profile.jpg`;
       const filePath = `${fileName}`;
 
+      // Upload cropped image to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('member-photos')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedImageBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
 
       if (uploadError) throw uploadError;
 
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('member-photos')
         .getPublicUrl(filePath);
 
+      // Update member record with new photo URL
       const { error: updateError } = await supabase
         .from('members')
         .update({ photo_url: publicUrl })
@@ -81,6 +86,7 @@ const Profile = () => {
         description: "Profile photo updated successfully",
       });
 
+      // Reload page to show new photo
       window.location.reload();
     } catch (error: any) {
       console.error('Photo upload error:', error);
@@ -89,8 +95,7 @@ const Profile = () => {
         description: error.message || "Failed to upload photo",
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
+      throw error; // Re-throw to let PhotoCropDialog handle it
     }
   };
 
@@ -176,26 +181,15 @@ const Profile = () => {
                     {member.full_name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute -bottom-2 -right-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="h-8 w-8 rounded-full cursor-pointer"
-                    asChild
-                    disabled={uploading}
-                  >
-                    <span>
-                      {uploading ? <Upload className="h-4 w-4 animate-pulse" /> : <Camera className="h-4 w-4" />}
-                    </span>
-                  </Button>
-                </label>
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                  onClick={() => setIsCropDialogOpen(true)}
+                  disabled={uploading}
+                >
+                  {uploading ? <Upload className="h-4 w-4 animate-pulse" /> : <Camera className="h-4 w-4" />}
+                </Button>
               </div>
               
               <div className="flex-1">
@@ -417,6 +411,15 @@ const Profile = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Photo Crop Dialog */}
+        <PhotoCropDialog
+          open={isCropDialogOpen}
+          onOpenChange={setIsCropDialogOpen}
+          onCropComplete={handleCropComplete}
+          title="Update Profile Photo"
+          description="Upload and crop your profile photo. Face detection will automatically center your face."
+        />
       </div>
     </MainLayout>
   );
