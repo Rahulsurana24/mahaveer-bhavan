@@ -34,11 +34,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter } from "lucide-react";
+import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter, Eye, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { MemberProfileModal } from "@/components/admin/MemberProfileModal";
 
 const MemberManagement = () => {
   const [members, setMembers] = useState<any[]>([]);
@@ -50,6 +51,8 @@ const MemberManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [viewingMemberId, setViewingMemberId] = useState<string | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -252,6 +255,11 @@ const MemberManagement = () => {
     setIsEditDialogOpen(true);
   };
 
+  const openProfileModal = (member: any) => {
+    setViewingMemberId(member.id);
+    setIsProfileModalOpen(true);
+  };
+
   const resetForm = () => {
     setFormData({
       full_name: "",
@@ -445,6 +453,10 @@ const MemberManagement = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openProfileModal(member)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Profile
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openEditDialog(member)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
@@ -667,6 +679,18 @@ const MemberManagement = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Member Profile Modal */}
+        {viewingMemberId && (
+          <MemberProfileModal
+            memberId={viewingMemberId}
+            isOpen={isProfileModalOpen}
+            onClose={() => {
+              setIsProfileModalOpen(false);
+              setViewingMemberId(null);
+            }}
+          />
+        )}
       </div>
     </AdminLayout>
   );
