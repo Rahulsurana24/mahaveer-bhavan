@@ -11,7 +11,9 @@ import {
   MessageSquare, 
   DollarSign, 
   BarChart3, 
-  Settings 
+  Settings,
+  ClipboardCheck,
+  CalendarDays
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -25,6 +27,8 @@ const adminNavItems = [
   { icon: UserCog, label: "Admins", path: "/admin/admins" },
   { icon: Calendar, label: "Events", path: "/admin/events" },
   { icon: Plane, label: "Trips", path: "/admin/trips" },
+  { icon: ClipboardCheck, label: "Attendance", path: "/admin/attendance" },
+  { icon: CalendarDays, label: "Calendar", path: "/admin/calendar" },
   { icon: Image, label: "Gallery", path: "/admin/gallery" },
   { icon: MessageSquare, label: "Communications", path: "/admin/communications" },
   { icon: DollarSign, label: "Finances", path: "/admin/finances" },
