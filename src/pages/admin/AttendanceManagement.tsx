@@ -58,6 +58,7 @@ const AttendanceManagement = () => {
   const [isCreateItemOpen, setIsCreateItemOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemDescription, setNewItemDescription] = useState('');
+  const [newItemDate, setNewItemDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Check admin role
@@ -106,7 +107,7 @@ const AttendanceManagement = () => {
           *,
           members (id, full_name, membership_type, phone)
         `)
-        .eq('item_id', selectedItem)
+        .eq('attendance_item_id', selectedItem)
         .gte('marked_at', `${today}T00:00:00`)
         .lte('marked_at', `${today}T23:59:59`)
         .order('marked_at', { ascending: false });
@@ -158,9 +159,9 @@ const AttendanceManagement = () => {
         .from('attendance_records')
         .insert({
           member_id: data.memberId,
-          item_id: data.itemId,
+          attendance_item_id: data.itemId,
           marked_by: profile?.id,
-          scan_method: data.scanMethod,
+          method: data.scanMethod,
           notes: data.notes || null
         });
 
@@ -189,7 +190,7 @@ const AttendanceManagement = () => {
 
   // Create item mutation
   const createItemMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
+    mutationFn: async (data: { name: string; description: string; date: string }) => {
       const { data: userData } = await supabase.auth.getUser();
       
       // Get user_profile ID
@@ -202,8 +203,9 @@ const AttendanceManagement = () => {
       const { error } = await supabase
         .from('attendance_items')
         .insert({
-          item_name: data.name,
+          title: data.name,
           description: data.description,
+          event_date: data.date,
           created_by: profile?.id
         });
 
@@ -218,6 +220,7 @@ const AttendanceManagement = () => {
       setIsCreateItemOpen(false);
       setNewItemName('');
       setNewItemDescription('');
+      setNewItemDate(new Date().toISOString().split('T')[0]);
     },
     onError: () => {
       toast({
@@ -279,7 +282,8 @@ const AttendanceManagement = () => {
 
     createItemMutation.mutate({
       name: newItemName,
-      description: newItemDescription
+      description: newItemDescription,
+      date: newItemDate
     });
   };
 
@@ -316,7 +320,7 @@ const AttendanceManagement = () => {
               <SelectContent>
                 {items?.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
-                    {item.item_name}
+                    {item.title}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -475,13 +479,13 @@ const AttendanceManagement = () => {
                       </Card>
                       <Card className="flex-1 p-4">
                         <div className="text-2xl font-bold">
-                          {todayRecords?.filter((r) => r.scan_method === 'qr_scan').length || 0}
+                          {todayRecords?.filter((r) => r.method === 'qr_scan').length || 0}
                         </div>
                         <div className="text-sm text-muted-foreground">Via QR Scan</div>
                       </Card>
                       <Card className="flex-1 p-4">
                         <div className="text-2xl font-bold">
-                          {todayRecords?.filter((r) => r.scan_method === 'manual').length || 0}
+                          {todayRecords?.filter((r) => r.method === 'manual').length || 0}
                         </div>
                         <div className="text-sm text-muted-foreground">Manual Entry</div>
                       </Card>
@@ -509,8 +513,8 @@ const AttendanceManagement = () => {
                             </TableCell>
                             <TableCell>{format(new Date(record.marked_at), 'HH:mm:ss')}</TableCell>
                             <TableCell>
-                              <Badge variant={record.scan_method === 'qr_scan' ? 'default' : 'secondary'}>
-                                {record.scan_method === 'qr_scan' ? 'QR Scan' : 'Manual'}
+                              <Badge variant={record.method === 'qr_scan' ? 'default' : 'secondary'}>
+                                {record.method === 'qr_scan' ? 'QR Scan' : 'Manual'}
                               </Badge>
                             </TableCell>
                           </TableRow>
@@ -540,6 +544,14 @@ const AttendanceManagement = () => {
                   placeholder="e.g., Monthly Kit Distribution"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Event Date *</Label>
+                <Input
+                  type="date"
+                  value={newItemDate}
+                  onChange={(e) => setNewItemDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
