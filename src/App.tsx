@@ -29,6 +29,7 @@ import SystemSettings from "./pages/admin/SystemSettings";
 import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
 import TripManagement from "./pages/admin/TripManagement";
+import GalleryManagement from "./pages/admin/GalleryManagement";
 import ChangePassword from "./pages/ChangePassword";
 import DiagnosticPage from "./pages/DiagnosticPage";
 
@@ -160,13 +161,18 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/settings" element={
-              <ProtectedRoute requireAdmin>
+              <ProtectedRoute requireSuperAdmin>
                 <SystemSettings />
               </ProtectedRoute>
             } />
             <Route path="/admin/trips" element={
               <ProtectedRoute requireAdmin>
                 <TripManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/gallery" element={
+              <ProtectedRoute requireAdmin>
+                <GalleryManagement />
               </ProtectedRoute>
             } />
             

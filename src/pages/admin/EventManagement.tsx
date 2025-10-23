@@ -27,12 +27,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Calendar, MapPin, Users, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import { Search, Calendar, MapPin, Users, MoreHorizontal, Edit, Trash2, Eye, Plus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
 import { CreateEventDialog } from "@/components/admin/CreateEventDialog";
+import { EditEventDialog } from "@/components/admin/EditEventDialog";
 
 const EventManagement = () => {
   const { toast } = useToast();
@@ -40,6 +41,8 @@ const EventManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Fetch events from database
   const { data: events, isLoading } = useQuery({
@@ -104,6 +107,11 @@ const EventManagement = () => {
     if (confirm('Are you sure you want to delete this event?')) {
       deleteMutation.mutate(eventId);
     }
+  };
+
+  const handleEdit = (event: any) => {
+    setEditingEvent(event);
+    setIsEditDialogOpen(true);
   };
 
   const getStatusBadge = (isPublished: boolean) => {
@@ -202,10 +210,7 @@ const EventManagement = () => {
                     ? 'Try adjusting your filters'
                     : 'Get started by creating your first event'}
                 </p>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Event
-                </Button>
+                <CreateEventDialog />
               </div>
             ) : (
               <Table>
@@ -275,7 +280,7 @@ const EventManagement = () => {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(event)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Event
                             </DropdownMenuItem>
@@ -301,6 +306,15 @@ const EventManagement = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Event Dialog */}
+        {editingEvent && (
+          <EditEventDialog
+            event={editingEvent}
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+          />
+        )}
       </div>
     </AdminLayout>
   );
