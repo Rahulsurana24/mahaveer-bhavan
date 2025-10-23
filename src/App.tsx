@@ -30,6 +30,8 @@ import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
 import TripManagement from "./pages/admin/TripManagement";
 import GalleryManagement from "./pages/admin/GalleryManagement";
+import AttendanceManagement from "./pages/admin/AttendanceManagement";
+import CalendarManagement from "./pages/admin/CalendarManagement";
 import ChangePassword from "./pages/ChangePassword";
 import DiagnosticPage from "./pages/DiagnosticPage";
 
