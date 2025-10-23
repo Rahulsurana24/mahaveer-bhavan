@@ -30,6 +30,7 @@ import ReportsAnalytics from "./pages/admin/ReportsAnalytics";
 import SystemSettings from "./pages/admin/SystemSettings";
 import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
+import Calendar from "./pages/Calendar";
 import TripManagement from "./pages/admin/TripManagement";
 import GalleryManagement from "./pages/admin/GalleryManagement";
 import AttendanceManagement from "./pages/admin/AttendanceManagement";
@@ -119,6 +120,11 @@ const App = () => (
             <Route path="/trips/:id" element={
               <ProtectedRoute>
                 <TripDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/calendar" element={
+              <ProtectedRoute>
+                <Calendar />
               </ProtectedRoute>
             } />
             <Route path="/admin-setup" element={
