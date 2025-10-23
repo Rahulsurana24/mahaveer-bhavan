@@ -161,7 +161,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/settings" element={
-              <ProtectedRoute requireAdmin>
+              <ProtectedRoute requireSuperAdmin>
                 <SystemSettings />
               </ProtectedRoute>
             } />
