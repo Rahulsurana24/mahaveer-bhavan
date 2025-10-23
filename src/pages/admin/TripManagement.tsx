@@ -8,10 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Users, FileText, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, FileText, Calendar, DollarSign, Plane } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { TripPricingDialog } from '@/components/admin/TripPricingDialog';
+import { TripLogisticsDialog } from '@/components/admin/TripLogisticsDialog';
 
 const TripManagement = () => {
   const [trips, setTrips] = useState<any[]>([]);
@@ -19,6 +21,10 @@ const TripManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<any>(null);
+  const [pricingTrip, setPricingTrip] = useState<any>(null);
+  const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
+  const [logisticsTrip, setLogisticsTrip] = useState<any>(null);
+  const [isLogisticsDialogOpen, setIsLogisticsDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -80,6 +86,16 @@ const TripManagement = () => {
   const handleEdit = (trip: any) => {
     setEditingTrip(trip);
     setIsEditDialogOpen(true);
+  };
+
+  const handleManagePricing = (trip: any) => {
+    setPricingTrip(trip);
+    setIsPricingDialogOpen(true);
+  };
+
+  const handleManageLogistics = (trip: any) => {
+    setLogisticsTrip(trip);
+    setIsLogisticsDialogOpen(true);
   };
 
   return (
@@ -160,6 +176,12 @@ const TripManagement = () => {
                           <Button size="sm" variant="outline" onClick={() => handleEdit(trip)}>
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleManagePricing(trip)}>
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleManageLogistics(trip)}>
+                            <Plane className="h-4 w-4" />
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="destructive" 
@@ -195,6 +217,26 @@ const TripManagement = () => {
               />
             </DialogContent>
           </Dialog>
+        )}
+
+        {/* Trip Pricing Dialog */}
+        {pricingTrip && (
+          <TripPricingDialog
+            tripId={pricingTrip.id}
+            tripTitle={pricingTrip.title}
+            open={isPricingDialogOpen}
+            onOpenChange={setIsPricingDialogOpen}
+          />
+        )}
+
+        {/* Trip Logistics Dialog */}
+        {logisticsTrip && (
+          <TripLogisticsDialog
+            tripId={logisticsTrip.id}
+            tripTitle={logisticsTrip.title}
+            open={isLogisticsDialogOpen}
+            onOpenChange={setIsLogisticsDialogOpen}
+          />
         )}
       </div>
     </AdminLayout>
