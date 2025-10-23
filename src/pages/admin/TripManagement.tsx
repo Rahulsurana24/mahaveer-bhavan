@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TripPricingDialog } from '@/components/admin/TripPricingDialog';
 import { TripLogisticsDialog } from '@/components/admin/TripLogisticsDialog';
+import { TripFormFieldsManager } from '@/components/admin/TripFormFieldsManager';
 
 const TripManagement = () => {
   const [trips, setTrips] = useState<any[]>([]);
@@ -25,6 +26,8 @@ const TripManagement = () => {
   const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
   const [logisticsTrip, setLogisticsTrip] = useState<any>(null);
   const [isLogisticsDialogOpen, setIsLogisticsDialogOpen] = useState(false);
+  const [formFieldsTrip, setFormFieldsTrip] = useState<any>(null);
+  const [isFormFieldsDialogOpen, setIsFormFieldsDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -96,6 +99,11 @@ const TripManagement = () => {
   const handleManageLogistics = (trip: any) => {
     setLogisticsTrip(trip);
     setIsLogisticsDialogOpen(true);
+  };
+
+  const handleManageFormFields = (trip: any) => {
+    setFormFieldsTrip(trip);
+    setIsFormFieldsDialogOpen(true);
   };
 
   return (
@@ -182,6 +190,9 @@ const TripManagement = () => {
                           <Button size="sm" variant="outline" onClick={() => handleManageLogistics(trip)}>
                             <Plane className="h-4 w-4" />
                           </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleManageFormFields(trip)}>
+                            <FileText className="h-4 w-4" />
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="destructive" 
@@ -236,6 +247,16 @@ const TripManagement = () => {
             tripTitle={logisticsTrip.title}
             open={isLogisticsDialogOpen}
             onOpenChange={setIsLogisticsDialogOpen}
+          />
+        )}
+
+        {/* Trip Form Fields Manager Dialog */}
+        {formFieldsTrip && (
+          <TripFormFieldsManager
+            tripId={formFieldsTrip.id}
+            tripTitle={formFieldsTrip.title}
+            open={isFormFieldsDialogOpen}
+            onOpenChange={setIsFormFieldsDialogOpen}
           />
         )}
       </div>
