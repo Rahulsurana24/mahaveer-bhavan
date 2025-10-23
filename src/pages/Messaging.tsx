@@ -28,7 +28,8 @@ import {
   CheckCheck,
   Download,
   X,
-  Camera
+  Camera,
+  Loader2
 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useMemberData } from '@/hooks/useMemberData';
@@ -76,6 +77,7 @@ export default function Messaging() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaPreview, setMediaPreview] = useState<{url: string, type: string} | null>(null);
   const [showCallDialog, setShowCallDialog] = useState<'audio' | 'video' | null>(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   // Fetch conversations
   const { data: chats, isLoading: chatsLoading } = useQuery({
@@ -206,21 +208,129 @@ export default function Messaging() {
   };
 
   const handleMediaUpload = async (file: File, type: string) => {
-    // Create preview
-    const url = URL.createObjectURL(file);
-    setMediaPreview({ url, type });
-    setShowMediaDialog(false);
+    if (!member?.id) {
+      toast({
+        title: "Error",
+        description: "Member information not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (10MB max for messaging)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be less than 10MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadingMedia(true);
+    
+    try {
+      // Upload to storage
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${timestamp}-${randomString}.${fileExt}`;
+      const filePath = `${member.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('messaging-attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get signed URL (valid for 7 days)
+      const { data: signedUrlData, error: urlError } = await supabase.storage
+        .from('messaging-attachments')
+        .createSignedUrl(uploadData.path, 60 * 60 * 24 * 7); // 7 days
+
+      if (urlError) throw urlError;
+
+      // Create preview with actual uploaded URL
+      setMediaPreview({ 
+        url: signedUrlData.signedUrl, 
+        type: type 
+      });
+      setShowMediaDialog(false);
+      
+      toast({
+        title: "Success",
+        description: "File uploaded successfully"
+      });
+    } catch (error: any) {
+      console.error('Media upload error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload file",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingMedia(false);
+    }
   };
 
-  const handleAudioRecorded = (audioBlob: Blob, duration: number) => {
-    // In a real app, upload to storage and get URL
-    const url = URL.createObjectURL(audioBlob);
-    sendMessageMutation.mutate({
-      content: `Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})`,
-      media_url: url,
-      media_type: 'audio'
-    });
-    setIsRecording(false);
+  const handleAudioRecorded = async (audioBlob: Blob, duration: number) => {
+    if (!member?.id) {
+      toast({
+        title: "Error",
+        description: "Member information not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadingMedia(true);
+
+    try {
+      // Convert blob to file
+      const timestamp = Date.now();
+      const fileName = `voice-${timestamp}.webm`;
+      const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
+      
+      // Upload to storage
+      const filePath = `${member.id}/${fileName}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('messaging-attachments')
+        .upload(filePath, audioFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get signed URL
+      const { data: signedUrlData, error: urlError } = await supabase.storage
+        .from('messaging-attachments')
+        .createSignedUrl(uploadData.path, 60 * 60 * 24 * 7);
+
+      if (urlError) throw urlError;
+
+      // Send message with audio
+      await sendMessageMutation.mutateAsync({
+        content: `Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})`,
+        media_url: signedUrlData.signedUrl,
+        media_type: 'audio'
+      });
+
+      setIsRecording(false);
+    } catch (error: any) {
+      console.error('Audio upload error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload audio",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingMedia(false);
+    }
   };
 
   const startNewChat = (member: any) => {
@@ -456,8 +566,12 @@ export default function Messaging() {
 
                   <DropdownMenu open={showMediaDialog} onOpenChange={setShowMediaDialog}>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" type="button">
-                        <Paperclip className="h-5 w-5" />
+                      <Button variant="ghost" size="icon" type="button" disabled={uploadingMedia}>
+                        {uploadingMedia ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Paperclip className="h-5 w-5" />
+                        )}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-48">
@@ -470,6 +584,7 @@ export default function Messaging() {
                             className="hidden"
                             accept="image/*"
                             onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], 'image')}
+                            disabled={uploadingMedia}
                           />
                         </label>
                       </DropdownMenuItem>
@@ -483,6 +598,7 @@ export default function Messaging() {
                             accept="image/*"
                             capture="environment"
                             onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], 'image')}
+                            disabled={uploadingMedia}
                           />
                         </label>
                       </DropdownMenuItem>
@@ -495,6 +611,7 @@ export default function Messaging() {
                             className="hidden"
                             accept=".pdf,.doc,.docx,.txt"
                             onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], 'document')}
+                            disabled={uploadingMedia}
                           />
                         </label>
                       </DropdownMenuItem>
@@ -507,14 +624,19 @@ export default function Messaging() {
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                     className="flex-1"
+                    disabled={uploadingMedia}
                   />
 
                   {messageText.trim() || mediaPreview ? (
-                    <Button size="icon" onClick={handleSendMessage} disabled={sendMessageMutation.isPending}>
-                      <Send className="h-5 w-5" />
+                    <Button size="icon" onClick={handleSendMessage} disabled={sendMessageMutation.isPending || uploadingMedia}>
+                      {sendMessageMutation.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
                     </Button>
                   ) : (
-                    <Button variant="ghost" size="icon" onClick={() => setIsRecording(true)}>
+                    <Button variant="ghost" size="icon" onClick={() => setIsRecording(true)} disabled={uploadingMedia}>
                       <Mic className="h-5 w-5" />
                     </Button>
                   )}
