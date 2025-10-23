@@ -6,10 +6,34 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Calendar, DollarSign, MessageSquare, Settings, Shield, TrendingUp, Plane } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Loading } from "@/components/ui/loading";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const UnifiedDashboard = () => {
   const { role, loading } = useUserProfile();
   const navigate = useNavigate();
+
+  // Fetch real-time statistics
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: async () => {
+      const [membersRes, eventsRes, tripsRes, donationsRes] = await Promise.all([
+        supabase.from('members').select('id', { count: 'exact', head: true }),
+        supabase.from('events').select('id', { count: 'exact', head: true }).eq('is_published', true),
+        supabase.from('trips').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+        supabase.from('donations').select('amount').gte('created_at', new Date(new Date().setDate(1)).toISOString())
+      ]);
+
+      const totalDonations = donationsRes.data?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
+
+      return {
+        totalMembers: membersRes.count || 0,
+        activeEvents: eventsRes.count || 0,
+        activeTrips: tripsRes.count || 0,
+        monthlyDonations: totalDonations
+      };
+    }
+  });
 
   if (loading) {
     return (
@@ -96,11 +120,11 @@ const UnifiedDashboard = () => {
     }
   ];
 
-  const stats = [
-    { title: "Total Members", value: "1,234", icon: Users, visible: true },
-    { title: "Active Events", value: "12", icon: Calendar, visible: true },
-    { title: "Active Trips", value: "8", icon: Plane, visible: true },
-    { title: "Monthly Donations", value: "₹2,45,000", icon: DollarSign, visible: isFullAdmin }
+  const statsCards = [
+    { title: "Total Members", value: stats?.totalMembers || 0, icon: Users, visible: true },
+    { title: "Active Events", value: stats?.activeEvents || 0, icon: Calendar, visible: true },
+    { title: "Active Trips", value: stats?.activeTrips || 0, icon: Plane, visible: true },
+    { title: "Monthly Donations", value: `₹${(stats?.monthlyDonations || 0).toLocaleString('en-IN')}`, icon: DollarSign, visible: isFullAdmin }
   ];
 
   return (
@@ -122,7 +146,7 @@ const UnifiedDashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.filter(stat => stat.visible).map((stat) => {
+          {statsCards.filter(stat => stat.visible).map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.title}>
