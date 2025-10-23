@@ -219,6 +219,7 @@ const CommunicationCenter = () => {
             <TabsTrigger value="compose">Compose Message</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="history">Message History</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp Settings</TabsTrigger>
           </TabsList>
 
           {/* Compose Message Tab */}
