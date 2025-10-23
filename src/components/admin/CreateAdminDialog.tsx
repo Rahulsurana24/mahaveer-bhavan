@@ -49,20 +49,34 @@ export function CreateAdminDialog() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Create auth user with email and password
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create auth user with email and password using signUp (client-side compatible)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        email_confirm: true,
-        user_metadata: { full_name: data.fullName }
+        options: {
+          data: {
+            full_name: data.fullName
+          },
+          emailRedirectTo: window.location.origin
+        }
       });
+      
       if (authError) throw authError;
+      if (!authData.user) throw new Error('User creation failed');
 
-      // Update user profile with admin role
+      // Wait a moment for the user profile to be created by trigger
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update user profile with admin role and full name
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .update({ role_id: data.roleId, needs_password_change: true })
-        .eq('email', data.email);
+        .update({ 
+          role_id: data.roleId, 
+          needs_password_change: true,
+          full_name: data.fullName
+        })
+        .eq('auth_id', authData.user.id);
+        
       if (profileError) throw profileError;
 
       return authData;
