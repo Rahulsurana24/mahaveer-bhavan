@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,62 +27,121 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Shield, Mail, Calendar } from "lucide-react";
+import { Search, MoreHorizontal, Edit, Trash2, Shield, Mail, Calendar } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loading } from "@/components/ui/loading";
+import { CreateAdminDialog } from "@/components/admin/CreateAdminDialog";
 
 const AdminManagement = () => {
-  const admins = [
-    {
-      id: "ADM-001",
-      name: "Rajesh Sharma",
-      email: "rajesh.admin@mahaveertrust.org",
-      role: "superadmin",
-      status: "active",
-      lastLogin: "2024-01-10 09:30 AM",
-      createdDate: "2023-01-15",
-      permissions: ["all"]
-    },
-    {
-      id: "ADM-002",
-      name: "Priya Patel",
-      email: "priya.admin@mahaveertrust.org", 
-      role: "admin",
-      status: "active",
-      lastLogin: "2024-01-09 02:15 PM",
-      createdDate: "2023-03-20",
-      permissions: ["member_management", "event_management", "communications"]
-    },
-    {
-      id: "ADM-003",
-      name: "Suresh Kumar",
-      email: "suresh.admin@mahaveertrust.org",
-      role: "management_admin",
-      status: "active",
-      lastLogin: "2024-01-08 11:45 AM",
-      createdDate: "2023-06-10",
-      permissions: ["event_management", "financial_management"]
-    },
-    {
-      id: "ADM-004",
-      name: "Meera Shah",
-      email: "meera.view@mahaveertrust.org",
-      role: "view_only_admin",
-      status: "inactive",
-      lastLogin: "2023-12-28 04:20 PM",
-      createdDate: "2023-09-05",
-      permissions: ["view_only"]
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Fetch admins from database
+  const { data: admins, isLoading } = useQuery({
+    queryKey: ['admin-admins', searchTerm, roleFilter, statusFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('user_profiles')
+        .select(`
+          *,
+          user_roles(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Filter by admin roles only
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('id')
+        .in('name', ['admin', 'superadmin', 'management_admin', 'view_only_admin']);
+      
+      if (roleData) {
+        const roleIds = roleData.map(r => r.id);
+        query = query.in('role_id', roleIds);
+      }
+
+      if (searchTerm) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      if (roleFilter !== 'all' && roleData) {
+        const filteredRole = roleData.find(r => r.name === roleFilter);
+        if (filteredRole) {
+          query = query.eq('role_id', filteredRole.id);
+        }
+      }
+
+      if (statusFilter !== 'all') {
+        const isActive = statusFilter === 'active';
+        query = query.eq('is_active', isActive);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
     }
-  ];
+  });
+
+  // Fetch role counts
+  const { data: roleCounts } = useQuery({
+    queryKey: ['admin-role-counts'],
+    queryFn: async () => {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('id, name')
+        .in('name', ['admin', 'superadmin', 'management_admin', 'view_only_admin']);
+
+      if (!roleData) return {};
+
+      const counts: Record<string, number> = {};
+      for (const role of roleData) {
+        const { count } = await supabase
+          .from('user_profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('role_id', role.id)
+          .eq('is_active', true);
+        counts[role.name] = count || 0;
+      }
+      return counts;
+    }
+  });
+
+  // Delete admin mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // Deactivate instead of delete
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ is_active: false })
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-admins'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-role-counts'] });
+      toast({
+        title: "Admin deactivated",
+        description: "Administrator has been deactivated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to deactivate admin: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDelete = (userId: string, userName: string) => {
+    if (confirm(`Are you sure you want to deactivate ${userName}?`)) {
+      deleteMutation.mutate(userId);
+    }
+  };
 
   const roles = [
     { 
@@ -110,17 +170,17 @@ const AdminManagement = () => {
     }
   ];
 
-  const getStatusBadge = (status: string) => {
-    return status === "active" ? (
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
       <Badge variant="default">Active</Badge>
     ) : (
       <Badge variant="secondary">Inactive</Badge>
     );
   };
 
-  const getRoleBadge = (role: string) => {
-    const roleInfo = roles.find(r => r.value === role);
-    if (!roleInfo) return <Badge variant="outline">{role}</Badge>;
+  const getRoleBadge = (roleName: string) => {
+    const roleInfo = roles.find(r => r.value === roleName);
+    if (!roleInfo) return <Badge variant="outline">{roleName}</Badge>;
     
     return (
       <Badge variant="outline" className="flex items-center gap-1">
@@ -129,6 +189,16 @@ const AdminManagement = () => {
       </Badge>
     );
   };
+
+  if (isLoading) {
+    return (
+      <AdminLayout title="Admin Management">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loading size="lg" text="Loading administrators..." />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Admin Management">
@@ -139,73 +209,7 @@ const AdminManagement = () => {
             <h2 className="text-2xl font-bold">Admin Management</h2>
             <p className="text-muted-foreground">Manage administrative users and their permissions</p>
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Admin
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New Administrator</DialogTitle>
-                <DialogDescription>
-                  Create a new administrative account with specific permissions.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="admin-name" className="text-right">
-                    Name
-                  </Label>
-                  <Input id="admin-name" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="admin-email" className="text-right">
-                    Email
-                  </Label>
-                  <Input id="admin-email" type="email" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="admin-role" className="text-right">
-                    Role
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${role.color}`} />
-                            <div>
-                              <div className="font-medium">{role.label}</div>
-                              <div className="text-xs text-muted-foreground">{role.description}</div>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="admin-notes" className="text-right">
-                    Notes
-                  </Label>
-                  <Textarea 
-                    id="admin-notes" 
-                    placeholder="Optional notes about this administrator"
-                    className="col-span-3" 
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit">Create Admin Account</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <CreateAdminDialog />
         </div>
 
         {/* Role Information Cards */}
@@ -218,7 +222,7 @@ const AdminManagement = () => {
               </div>
               <p className="text-sm text-muted-foreground mb-3">{role.description}</p>
               <div className="text-xs text-muted-foreground">
-                {admins.filter(admin => admin.role === role.value).length} active
+                {roleCounts?.[role.value] || 0} active
               </div>
             </Card>
           ))}
@@ -234,10 +238,12 @@ const AdminManagement = () => {
                   <Input
                     placeholder="Search administrators by name or email..."
                     className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
-              <Select>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by Role" />
                 </SelectTrigger>
@@ -250,7 +256,7 @@ const AdminManagement = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -267,71 +273,86 @@ const AdminManagement = () => {
         {/* Admins Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Administrators ({admins.length})</CardTitle>
+            <CardTitle>Administrators ({admins?.length || 0})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {admins.map((admin) => (
-                  <TableRow key={admin.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{admin.name}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {admin.email}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{admin.id}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getRoleBadge(admin.role)}</TableCell>
-                    <TableCell>{getStatusBadge(admin.status)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="h-3 w-3" />
-                        {admin.lastLogin}
-                      </div>
-                    </TableCell>
-                    <TableCell>{admin.createdDate}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Admin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Shield className="mr-2 h-4 w-4" />
-                            Manage Permissions
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Deactivate Admin
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            {!admins || admins.length === 0 ? (
+              <div className="text-center py-12">
+                <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No administrators found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'Get started by creating your first administrator'}
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Admin</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Login</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {admins.map((admin: any) => (
+                    <TableRow key={admin.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{admin.full_name}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {admin.email}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{admin.id.substring(0, 8)}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getRoleBadge(admin.user_roles?.name)}</TableCell>
+                      <TableCell>{getStatusBadge(admin.is_active)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Calendar className="h-3 w-3" />
+                          {admin.last_login ? new Date(admin.last_login).toLocaleString() : 'Never'}
+                        </div>
+                      </TableCell>
+                      <TableCell>{new Date(admin.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Admin
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Shield className="mr-2 h-4 w-4" />
+                              Manage Permissions
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDelete(admin.id, admin.full_name)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Deactivate Admin
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
