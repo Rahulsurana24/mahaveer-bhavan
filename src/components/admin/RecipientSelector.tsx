@@ -94,43 +94,47 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
 
         switch (value.type) {
           case 'all':
-            const { data: allMembers } = await supabase
+            const { count: allCount, error: allError } = await supabase
               .from('members')
-              .select('id', { count: 'exact', head: true })
+              .select('*', { count: 'exact', head: true })
               .eq('status', 'active');
-            count = allMembers ? (allMembers as any).count || 0 : 0;
+            if (allError) throw allError;
+            count = allCount || 0;
             break;
 
           case 'membership_type':
             if (value.membershipType) {
-              const { data: typeMembers } = await supabase
+              const { count: typeCount, error: typeError } = await supabase
                 .from('members')
-                .select('id', { count: 'exact', head: true })
+                .select('*', { count: 'exact', head: true })
                 .eq('status', 'active')
                 .eq('membership_type', value.membershipType);
-              count = typeMembers ? (typeMembers as any).count || 0 : 0;
+              if (typeError) throw typeError;
+              count = typeCount || 0;
             }
             break;
 
           case 'event_registration':
             if (value.eventId) {
-              const { data: eventRegistrations } = await supabase
+              const { count: eventCount, error: eventError } = await supabase
                 .from('event_registrations')
-                .select('member_id', { count: 'exact', head: true })
+                .select('*', { count: 'exact', head: true })
                 .eq('event_id', value.eventId)
                 .eq('status', 'confirmed');
-              count = eventRegistrations ? (eventRegistrations as any).count || 0 : 0;
+              if (eventError) throw eventError;
+              count = eventCount || 0;
             }
             break;
 
           case 'trip_registration':
             if (value.tripId) {
-              const { data: tripRegistrations } = await supabase
+              const { count: tripCount, error: tripError } = await supabase
                 .from('trip_registrations')
-                .select('member_id', { count: 'exact', head: true })
+                .select('*', { count: 'exact', head: true })
                 .eq('trip_id', value.tripId)
                 .eq('status', 'confirmed');
-              count = tripRegistrations ? (tripRegistrations as any).count || 0 : 0;
+              if (tripError) throw tripError;
+              count = tripCount || 0;
             }
             break;
 
