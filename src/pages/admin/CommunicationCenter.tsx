@@ -25,6 +25,13 @@ import { MessageLogsViewer } from '@/components/admin/MessageLogsViewer';
 import { BulkMessaging } from '@/components/admin/BulkMessaging';
 import { WhatsAppSessionManager } from '@/components/admin/WhatsAppSessionManager';
 import { WhatsAppStatusIndicator } from '@/components/admin/WhatsAppStatusIndicator';
+import {
+  checkWhatsAppStatus,
+  getMemberPhones,
+  sendBulkWhatsAppMessages,
+  getActiveWhatsAppSession,
+  createWhatsAppMessageLogs
+} from '@/utils/whatsapp';
 
 const CommunicationCenter = () => {
   const { toast } = useToast();
@@ -54,7 +61,8 @@ const CommunicationCenter = () => {
     }) => {
       const { data: userData } = await supabase.auth.getUser();
 
-      const { error } = await supabase
+      // Insert into message_logs for email/SMS
+      const { error: logError } = await supabase
         .from('message_logs')
         .insert({
           subject: data.subject || null,
@@ -67,22 +75,92 @@ const CommunicationCenter = () => {
           scheduled_for: data.scheduledFor || null
         });
 
-      if (error) throw error;
+      if (logError) throw logError;
+
+      // Handle WhatsApp sending if whatsapp channel is selected
+      if (data.channels.includes('whatsapp') && !data.scheduledFor) {
+        // Check WhatsApp status
+        const whatsappStatus = await checkWhatsAppStatus();
+        if (!whatsappStatus.isReady) {
+          throw new Error('WhatsApp is not connected. Please connect in the WhatsApp Settings tab.');
+        }
+
+        // Get session ID
+        const sessionId = await getActiveWhatsAppSession();
+        if (!sessionId) {
+          throw new Error('WhatsApp session not found');
+        }
+
+        // Get member phones
+        const members = await getMemberPhones(data.recipientFilter);
+        if (members.length === 0) {
+          throw new Error('No members found with phone numbers for the selected filter');
+        }
+
+        // Get current user profile
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('auth_id', userData.user?.id)
+          .single();
+
+        // Create message logs
+        const messageIds = await createWhatsAppMessageLogs(
+          sessionId,
+          members.map(m => ({
+            phone: m.phone,
+            name: m.name,
+            memberId: m.id
+          })),
+          data.body,
+          profile?.id || ''
+        );
+
+        // Send messages via WhatsApp
+        const whatsappMessages = members.map((member, index) => ({
+          phone: member.phone,
+          message: data.body,
+          message_id: messageIds[index]
+        }));
+
+        const result = await sendBulkWhatsAppMessages(whatsappMessages);
+
+        if (result.failed > 0) {
+          console.warn(`${result.failed} WhatsApp messages failed to send`);
+        }
+
+        return {
+          ...data,
+          whatsappResult: result
+        };
+      }
+
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['message-logs'] });
+
+      let description = scheduledDate
+        ? 'Message scheduled successfully'
+        : 'Message sent successfully';
+
+      // Add WhatsApp result info if applicable
+      if (result.whatsappResult) {
+        description += ` (WhatsApp: ${result.whatsappResult.sent} sent, ${result.whatsappResult.failed} failed)`;
+      }
+
       toast({
         title: 'Success',
-        description: scheduledDate ? 'Message scheduled successfully' : 'Message sent successfully',
+        description
       });
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error sending message:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send message',
-        variant: 'destructive',
+        description: error.message || 'Failed to send message',
+        variant: 'destructive'
       });
     }
   });
