@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,17 @@ export function CreateMemberDialog() {
     phone: "", dateOfBirth: "", gender: "", address: "", city: "", state: "",
     postalCode: "", membershipType: "Extra"
   });
+
+  const generatePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    setFormData({...formData, password});
+    toast({ title: "Password Generated", description: "A secure password has been generated." });
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -79,7 +90,12 @@ export function CreateMemberDialog() {
             </div>
             <div className="space-y-2">
               <Label>Password *</Label>
-              <Input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
+              <div className="flex gap-2">
+                <Input type="text" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required className="flex-1" />
+                <Button type="button" variant="outline" size="icon" onClick={generatePassword}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Full Name *</Label>
@@ -121,11 +137,11 @@ export function CreateMemberDialog() {
               <Select value={formData.membershipType} onValueChange={(v) => setFormData({...formData, membershipType: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Karyakarta">Karyakarta</SelectItem>
-                  <SelectItem value="Labharti">Labharti</SelectItem>
-                  <SelectItem value="Tapasvi">Tapasvi</SelectItem>
-                  <SelectItem value="Trustee">Trustee</SelectItem>
-                  <SelectItem value="Extra">Extra</SelectItem>
+                  <SelectItem value="Karyakarta">Karyakarta (K-###)</SelectItem>
+                  <SelectItem value="Labharti">Labharti (L-###)</SelectItem>
+                  <SelectItem value="Tapasvi">Tapasvi (T-###)</SelectItem>
+                  <SelectItem value="Trustee">Trustee (TR-###)</SelectItem>
+                  <SelectItem value="Extra">Extra (E-###)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
