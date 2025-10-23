@@ -99,12 +99,19 @@ export function EventCalendar({ isAdmin = false }: EventCalendarProps) {
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const { data: userData } = await supabase.auth.getUser();
+      
+      // Get user_profile ID
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('auth_id', userData.user?.id)
+        .single();
 
       const { error } = await supabase
         .from('calendar_events')
         .insert({
           ...data,
-          created_by: userData.user?.id
+          created_by: profile?.id
         });
 
       if (error) throw error;
