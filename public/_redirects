@@ -1,0 +1,10 @@
+# Netlify Redirects File
+# This ensures all routes work with React Router
+
+# SPA fallback - redirect all requests to index.html
+# This fixes the "Page not found" error on refresh
+/*    /index.html   200
+
+# API proxy (if needed for CORS)
+# Uncomment and configure if you need to proxy API requests
+# /api/*  https://your-api-domain.com/:splat  200
