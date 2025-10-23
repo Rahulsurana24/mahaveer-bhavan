@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
@@ -31,6 +30,7 @@ import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
 import TripManagement from "./pages/admin/TripManagement";
 import ChangePassword from "./pages/ChangePassword";
+import DiagnosticPage from "./pages/DiagnosticPage";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +114,9 @@ const App = () => (
                 <AdminSetupPage />
               </ProtectedRoute>
             } />
+            
+            {/* Diagnostic Route */}
+            <Route path="/diagnostic" element={<DiagnosticPage />} />
             
             {/* Protected Admin Routes */}
             <Route path="/admin" element={
