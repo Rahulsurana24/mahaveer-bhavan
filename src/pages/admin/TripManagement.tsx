@@ -8,10 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Users, FileText, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, FileText, Calendar, DollarSign, Plane, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { TripPricingDialog } from '@/components/admin/TripPricingDialog';
+import { TripLogisticsDialog } from '@/components/admin/TripLogisticsDialog';
+import { TripFormFieldsManager } from '@/components/admin/TripFormFieldsManager';
+import { TripAllocationImport } from '@/components/admin/TripAllocationImport';
 
 const TripManagement = () => {
   const [trips, setTrips] = useState<any[]>([]);
@@ -19,6 +23,13 @@ const TripManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<any>(null);
+  const [pricingTrip, setPricingTrip] = useState<any>(null);
+  const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
+  const [logisticsTrip, setLogisticsTrip] = useState<any>(null);
+  const [isLogisticsDialogOpen, setIsLogisticsDialogOpen] = useState(false);
+  const [formFieldsTrip, setFormFieldsTrip] = useState<any>(null);
+  const [isFormFieldsDialogOpen, setIsFormFieldsDialogOpen] = useState(false);
+  const [isAllocationImportOpen, setIsAllocationImportOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -82,28 +93,39 @@ const TripManagement = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleManagePricing = (trip: any) => {
+    setPricingTrip(trip);
+    setIsPricingDialogOpen(true);
+  };
+
+  const handleManageLogistics = (trip: any) => {
+    setLogisticsTrip(trip);
+    setIsLogisticsDialogOpen(true);
+  };
+
+  const handleManageFormFields = (trip: any) => {
+    setFormFieldsTrip(trip);
+    setIsFormFieldsDialogOpen(true);
+  };
+
   return (
     <AdminLayout title="Trip Management">
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Trip Management</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create New Trip
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New Trip</DialogTitle>
-              </DialogHeader>
-              <TripForm onSuccess={() => {
-                setIsDialogOpen(false);
-                loadTrips();
-              }} />
-            </DialogContent>
-          </Dialog>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold">Trip Management</h2>
+            <p className="text-muted-foreground">Manage trips and travel programs</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsAllocationImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import Allocations
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Trip
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -149,16 +171,26 @@ const TripManagement = () => {
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
                           trip.status === 'open' ? 'bg-green-100 text-green-800' : 
-                          trip.status === 'published' ? 'bg-blue-100 text-blue-800' :
+                          trip.status === 'full' ? 'bg-blue-100 text-blue-800' :
+                          trip.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {trip.status}
+                          {trip.status || 'open'}
                         </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(trip)}>
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleManagePricing(trip)}>
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleManageLogistics(trip)}>
+                            <Plane className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleManageFormFields(trip)}>
+                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
@@ -196,6 +228,42 @@ const TripManagement = () => {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Trip Pricing Dialog */}
+        {pricingTrip && (
+          <TripPricingDialog
+            tripId={pricingTrip.id}
+            tripTitle={pricingTrip.title}
+            open={isPricingDialogOpen}
+            onOpenChange={setIsPricingDialogOpen}
+          />
+        )}
+
+        {/* Trip Logistics Dialog */}
+        {logisticsTrip && (
+          <TripLogisticsDialog
+            tripId={logisticsTrip.id}
+            tripTitle={logisticsTrip.title}
+            open={isLogisticsDialogOpen}
+            onOpenChange={setIsLogisticsDialogOpen}
+          />
+        )}
+
+        {/* Trip Form Fields Manager Dialog */}
+        {formFieldsTrip && (
+          <TripFormFieldsManager
+            tripId={formFieldsTrip.id}
+            tripTitle={formFieldsTrip.title}
+            open={isFormFieldsDialogOpen}
+            onOpenChange={setIsFormFieldsDialogOpen}
+          />
+        )}
+
+        {/* Trip Allocation Import Dialog */}
+        <TripAllocationImport
+          open={isAllocationImportOpen}
+          onOpenChange={setIsAllocationImportOpen}
+        />
       </div>
     </AdminLayout>
   );
@@ -548,8 +616,7 @@ const EditTripForm = ({ trip, onSuccess }: { trip: any; onSuccess: () => void })
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="published">Published</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="full">Full</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>

@@ -49,27 +49,109 @@ export function CreateAdminDialog() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Create auth user with email and password
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      console.log('[CreateAdmin] Starting admin creation for:', data.email);
+      
+      // Create auth user with email and password using signUp (client-side compatible)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        email_confirm: true,
-        user_metadata: { full_name: data.fullName }
+        options: {
+          data: {
+            full_name: data.fullName
+          },
+          emailRedirectTo: window.location.origin
+        }
       });
-      if (authError) throw authError;
+      
+      if (authError) {
+        console.error('[CreateAdmin] Auth signup error:', authError);
+        throw new Error(`Signup failed: ${authError.message}`);
+      }
+      
+      if (!authData.user) {
+        console.error('[CreateAdmin] No user returned from signup');
+        throw new Error('User creation failed - no user returned');
+      }
 
-      // Update user profile with admin role
-      const { error: profileError } = await supabase
+      console.log('[CreateAdmin] Auth user created:', authData.user.id);
+
+      // Wait a moment for the user profile to be created by trigger
+      console.log('[CreateAdmin] Waiting for profile trigger...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Increased to 2 seconds
+
+      // Check if profile was created
+      console.log('[CreateAdmin] Checking if profile exists...');
+      const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
-        .update({ role_id: data.roleId, needs_password_change: true })
-        .eq('email', data.email);
-      if (profileError) throw profileError;
+        .select('id, auth_id, email, role_id')
+        .eq('auth_id', authData.user.id)
+        .maybeSingle();
 
+      if (checkError) {
+        console.error('[CreateAdmin] Error checking profile:', checkError);
+        throw new Error(`Profile check failed: ${checkError.message}`);
+      }
+
+      if (!existingProfile) {
+        console.error('[CreateAdmin] Profile not created by trigger');
+        throw new Error('User profile was not created automatically. Please contact support.');
+      }
+
+      console.log('[CreateAdmin] Profile found:', existingProfile);
+
+      // Try using the RPC function first (more reliable)
+      console.log('[CreateAdmin] Attempting to update role via RPC function...');
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('update_user_role', {
+          p_user_auth_id: authData.user.id,
+          p_role_id: data.roleId
+        });
+
+      if (rpcError) {
+        console.warn('[CreateAdmin] RPC update failed:', rpcError.message);
+        console.log('[CreateAdmin] Falling back to direct UPDATE...');
+        
+        // Fallback to direct update
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .update({ 
+            role_id: data.roleId, 
+            needs_password_change: true,
+            full_name: data.fullName
+          })
+          .eq('auth_id', authData.user.id);
+          
+        if (profileError) {
+          console.error('[CreateAdmin] Direct UPDATE failed:', profileError);
+          throw new Error(`Failed to update profile: ${profileError.message}. Please ensure you have admin permissions.`);
+        }
+        
+        console.log('[CreateAdmin] Direct UPDATE succeeded');
+      } else {
+        console.log('[CreateAdmin] RPC update succeeded:', rpcResult);
+        
+        // Still need to update needs_password_change and full_name
+        const { error: extraUpdateError } = await supabase
+          .from('user_profiles')
+          .update({ 
+            needs_password_change: true,
+            full_name: data.fullName
+          })
+          .eq('auth_id', authData.user.id);
+          
+        if (extraUpdateError) {
+          console.warn('[CreateAdmin] Could not update additional fields:', extraUpdateError.message);
+          // Don't throw - the role was updated successfully which is critical
+        }
+      }
+
+      console.log('[CreateAdmin] Admin creation complete!');
       return authData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-admins'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-role-counts'] });
       toast({
         title: "Success",
         description: `Admin created successfully! Default password: ${DEFAULT_PASSWORD}`,
@@ -81,9 +163,10 @@ export function CreateAdminDialog() {
       setRoleId("");
     },
     onError: (error: any) => {
+      console.error('[CreateAdmin] Final error:', error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Admin Creation Failed",
+        description: error.message || "An unexpected error occurred. Check console for details.",
         variant: "destructive",
       });
     }

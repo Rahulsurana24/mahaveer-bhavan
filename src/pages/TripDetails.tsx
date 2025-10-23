@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { MapPin, Calendar, Users, DollarSign, Clock, Bus, FileText, Hotel, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { TripRegistrationDialog } from '@/components/trips/TripRegistrationDialog';
 
 const TripDetails = () => {
   const { id } = useParams();
@@ -17,6 +18,8 @@ const TripDetails = () => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [isRegistrationDialogOpen, setIsRegistrationDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,6 +48,8 @@ const TripDetails = () => {
           .single();
 
         if (memberData) {
+          setMemberId(memberData.id);
+          
           // Check registration
           const { data: registration } = await supabase
             .from('trip_registrations')
@@ -88,45 +93,12 @@ const TripDetails = () => {
     }
   };
 
-  const handleRegister = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
-
-      const { data: memberData } = await supabase
-        .from('members')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (!memberData) throw new Error('Member not found');
-
-      const { error } = await supabase
-        .from('trip_registrations')
-        .insert({
-          trip_id: id,
-          member_id: memberData.id,
-          status: 'registered',
-          payment_status: 'pending'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'You have successfully registered for this trip!'
-      });
-      loadTripDetails();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to register for trip',
-        variant: 'destructive'
-      });
+  const handleRegister = () => {
+    if (!memberId) {
+      navigate('/auth');
+      return;
     }
+    setIsRegistrationDialogOpen(true);
   };
 
   if (loading || !trip) {
@@ -300,6 +272,19 @@ const TripDetails = () => {
           </Card>
         )}
       </div>
+
+      {/* Registration Dialog */}
+      {memberId && (
+        <TripRegistrationDialog
+          tripId={id!}
+          tripTitle={trip.title}
+          tripPrice={trip.price}
+          memberId={memberId}
+          open={isRegistrationDialogOpen}
+          onOpenChange={setIsRegistrationDialogOpen}
+          onSuccess={loadTripDetails}
+        />
+      )}
     </MainLayout>
   );
 };

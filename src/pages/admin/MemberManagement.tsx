@@ -34,11 +34,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter } from "lucide-react";
+import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter, Eye, CreditCard, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { MemberProfileModal } from "@/components/admin/MemberProfileModal";
+import { MemberImport } from "@/components/admin/MemberImport";
 
 const MemberManagement = () => {
   const [members, setMembers] = useState<any[]>([]);
@@ -50,6 +52,9 @@ const MemberManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [viewingMemberId, setViewingMemberId] = useState<string | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -120,12 +125,12 @@ const MemberManagement = () => {
   const generateMemberId = async (membershipType: string) => {
     const prefixMap: Record<string, string> = {
       Trustee: "TR",
-      Tapasvi: "TP",
-      Karyakarta: "KR",
-      Labharti: "LB",
-      Extra: "EX",
+      Tapasvi: "T",
+      Karyakarta: "K",
+      Labharti: "L",
+      Extra: "E",
     };
-    const prefix = prefixMap[membershipType] || "EX";
+    const prefix = prefixMap[membershipType] || "E";
     
     const { data } = await supabase
       .from('members')
@@ -146,13 +151,50 @@ const MemberManagement = () => {
 
   const handleCreateMember = async () => {
     try {
+      // Validate required fields
+      if (!formData.full_name || !formData.email || !formData.phone || !formData.date_of_birth || !formData.address) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields (Name, Email, Phone, Date of Birth, Address)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if email already exists
+      const { data: existingMember } = await supabase
+        .from('members')
+        .select('id')
+        .eq('email', formData.email)
+        .single();
+
+      if (existingMember) {
+        toast({
+          title: "Error",
+          description: "A member with this email already exists",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const memberId = await generateMemberId(formData.membership_type);
       
       const { error } = await supabase
         .from('members')
         .insert([{
           id: memberId,
-          ...formData,
+          full_name: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
+          membership_type: formData.membership_type,
+          status: formData.status || 'active',
+          date_of_birth: formData.date_of_birth,
+          gender: formData.gender || 'male',
+          address: formData.address,
+          city: formData.city || '',
+          state: formData.state || '',
+          postal_code: formData.postal_code || '',
+          country: formData.country || 'India',
           photo_url: '/placeholder.svg',
           emergency_contact: {},
         }]);
@@ -161,7 +203,7 @@ const MemberManagement = () => {
 
       toast({
         title: "Success",
-        description: "Member created successfully",
+        description: `Member created successfully with ID: ${memberId}`,
       });
       
       setIsCreateDialogOpen(false);
@@ -170,8 +212,8 @@ const MemberManagement = () => {
     } catch (error: any) {
       console.error('Error creating member:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create member",
+        title: "Database Error",
+        description: error.message || "Failed to create member. Please check all fields and try again.",
         variant: "destructive",
       });
     }
@@ -250,6 +292,11 @@ const MemberManagement = () => {
       country: member.country || "India",
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openProfileModal = (member: any) => {
+    setViewingMemberId(member.id);
+    setIsProfileModalOpen(true);
   };
 
   const resetForm = () => {
@@ -338,6 +385,10 @@ const MemberManagement = () => {
             <Button variant="outline" onClick={exportMembers}>
               <Download className="h-4 w-4 mr-2" />
               Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
             </Button>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -445,6 +496,10 @@ const MemberManagement = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openProfileModal(member)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Profile
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openEditDialog(member)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
@@ -667,6 +722,24 @@ const MemberManagement = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Member Profile Modal */}
+        {viewingMemberId && (
+          <MemberProfileModal
+            memberId={viewingMemberId}
+            isOpen={isProfileModalOpen}
+            onClose={() => {
+              setIsProfileModalOpen(false);
+              setViewingMemberId(null);
+            }}
+          />
+        )}
+
+        {/* Member Import Dialog */}
+        <MemberImport
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+        />
       </div>
     </AdminLayout>
   );

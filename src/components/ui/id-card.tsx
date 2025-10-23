@@ -3,8 +3,9 @@ import { Card } from '@/components/ui/card';
 import { generateMemberQRCode } from '@/utils/qrCode';
 import { generateIDCardPDF } from '@/utils/pdfGenerator';
 import { Button } from '@/components/ui/button';
-import { Download, Share2 } from 'lucide-react';
+import { Download, Share2, Printer, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface IDCardProps {
   member: {
@@ -14,12 +15,15 @@ interface IDCardProps {
     photo_url: string;
     email: string;
     phone: string;
+    created_at?: string;
+    status?: string;
   };
 }
 
 export const IDCard = ({ member }: IDCardProps) => {
   const [qrCode, setQrCode] = useState<string>('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const generateQR = async () => {
@@ -62,7 +66,6 @@ export const IDCard = ({ member }: IDCardProps) => {
         console.error('Error sharing:', error);
       }
     } else {
-      // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: 'Link Copied',
@@ -71,60 +74,181 @@ export const IDCard = ({ member }: IDCardProps) => {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  // Calculate dates
+  const birthDate = member.created_at 
+    ? new Date(member.created_at).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')
+    : '01/01/1990';
+  
+  const expirationDate = member.created_at
+    ? new Date(new Date(member.created_at).setFullYear(new Date(member.created_at).getFullYear() + 1)).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')
+    : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/');
+
+  const isValid = member.status === 'active' || !member.status;
+
   return (
-    <div className="space-y-4">
-      <Card id="member-id-card" className="w-full max-w-md mx-auto p-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
-        {/* Header */}
-        <div className="text-center mb-4">
-          <div className="w-12 h-12 mx-auto mb-2 bg-primary-foreground rounded-full flex items-center justify-center">
-            <span className="text-primary font-bold text-lg">M</span>
-          </div>
-          <h2 className="text-lg font-bold">Sree Mahaveer Swami</h2>
-          <p className="text-sm opacity-90">Charitable Trust</p>
-        </div>
-
-        {/* Member Info */}
-        <div className="flex items-center space-x-4 mb-4">
-          <img 
-            src={member.photo_url} 
-            alt={member.full_name}
-            className="w-16 h-16 rounded-full object-cover border-2 border-primary-foreground"
-          />
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg">{member.full_name}</h3>
-            <p className="text-sm opacity-90">{member.membership_type}</p>
-            <p className="text-xs opacity-80">ID: {member.id}</p>
+    <div className="space-y-6 max-w-md mx-auto">
+      {/* ID Card */}
+      <Card id="member-id-card" className="overflow-visible shadow-xl print:shadow-none bg-background relative">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-6 rounded-t-lg print:hidden relative">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleBack}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-semibold">ID Card</h1>
           </div>
         </div>
 
-        {/* QR Code */}
-        <div className="flex justify-center mb-4">
-          {qrCode && (
-            <img 
-              src={qrCode} 
-              alt="Member QR Code"
-              className="w-20 h-20 bg-white p-1 rounded"
-            />
-          )}
+        {/* Floating Profile Picture - Modern Popup Effect */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-16 z-10 print:static print:translate-x-0 print:mt-8 print:mx-auto print:w-fit">
+          <div className="relative">
+            {/* Outer glow ring */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/60 rounded-full blur-md scale-105"></div>
+            {/* Photo container */}
+            <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-background shadow-2xl bg-background">
+              <img 
+                src={member.photo_url || '/placeholder-avatar.png'} 
+                alt={member.full_name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Status badge */}
+            {isValid && (
+              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 border-4 border-background shadow-lg">
+                <CheckCircle className="w-4 h-4 text-white fill-white" />
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center text-xs opacity-80">
-          <p>Valid Member</p>
-          <p>Issued: {new Date().getFullYear()}</p>
+        {/* Card Content - Add top padding to accommodate floating photo */}
+        <div className="pt-20 px-6 pb-8 space-y-6 print:pt-4">
+          {/* Member Name */}
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold text-foreground">{member.full_name}</h2>
+            <p className="text-sm text-muted-foreground font-medium">{member.membership_type}</p>
+          </div>
+
+          {/* Member Details Grid */}
+          <div className="space-y-4 bg-muted/30 rounded-xl p-6 border border-border">
+            {/* Birth Date and Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Birth date</p>
+                <p className="font-semibold text-foreground">{birthDate}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Status</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-green-600">Valid</span>
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            {/* Phone and ID Number */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Phone No.</p>
+                <p className="font-semibold text-foreground text-sm">{member.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">ID No.</p>
+                <p className="font-semibold text-foreground font-mono text-sm">{member.id}</p>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">E-mail</p>
+              <p className="font-semibold text-foreground text-sm break-all">{member.email}</p>
+            </div>
+
+            {/* Expiration Date */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Expiration date</p>
+              <p className="font-semibold text-foreground">{expirationDate}</p>
+            </div>
+          </div>
+
+          {/* QR Code Section - Single Large QR Code */}
+          <div className="space-y-3">
+            <p className="text-center text-sm font-medium text-muted-foreground">Scan QR Code</p>
+            {qrCode ? (
+              <div className="flex justify-center">
+                <div className="bg-white p-4 rounded-2xl shadow-lg border-2 border-primary/10 hover:border-primary/30 transition-colors">
+                  <img 
+                    src={qrCode} 
+                    alt="Member QR Code"
+                    className="w-48 h-48"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <div className="w-56 h-56 bg-muted/50 rounded-2xl flex items-center justify-center">
+                  <span className="text-sm text-muted-foreground">Loading QR Code...</span>
+                </div>
+              </div>
+            )}
+            <p className="text-center text-xs text-muted-foreground font-mono">{member.id}</p>
+          </div>
+
+          {/* Back to Home Button */}
+          <Button 
+            onClick={handleBack}
+            variant="outline" 
+            className="w-full h-12 text-base font-medium hover:bg-primary/5 print:hidden"
+          >
+            Back to home
+          </Button>
         </div>
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 justify-center">
-        <Button onClick={handleDownload} className="gap-2">
+      <div className="flex flex-col sm:flex-row gap-3 print:hidden">
+        <Button 
+          onClick={handleDownload} 
+          className="flex-1 gap-2 bg-primary hover:bg-primary/90 h-11"
+        >
           <Download className="w-4 h-4" />
           Download PDF
         </Button>
-        <Button onClick={handleShare} variant="outline" className="gap-2">
+        <Button 
+          onClick={handleShare} 
+          variant="outline" 
+          className="flex-1 gap-2 border-primary text-primary hover:bg-primary/10 h-11"
+        >
           <Share2 className="w-4 h-4" />
           Share
         </Button>
+        <Button 
+          onClick={handlePrint} 
+          variant="outline" 
+          className="flex-1 gap-2 h-11"
+        >
+          <Printer className="w-4 h-4" />
+          Print
+        </Button>
+      </div>
+
+      {/* Organization Footer */}
+      <div className="text-center text-sm text-muted-foreground print:hidden">
+        <p className="font-medium">Mahaveer Bhavan</p>
+        <p className="text-xs">www.mahaveerbhavan.org</p>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -315,8 +316,9 @@ const UploadMediaForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mediaType, setMediaType] = useState("image");
-  const [mediaUrl, setMediaUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [eventId, setEventId] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -336,30 +338,91 @@ const UploadMediaForm = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   });
 
-  const uploadMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { error } = await supabase.from('gallery_items').insert([data]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-gallery'] });
-      toast({ title: "Success", description: "Media uploaded successfully!" });
-      onSuccess();
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      // Validate file size (50MB max)
+      if (selectedFile.size > 50 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "File size must be less than 50MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      setFile(selectedFile);
     }
-  });
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    uploadMutation.mutate({
-      title,
-      description,
-      media_type: mediaType,
-      media_url: mediaUrl,
-      event_id: eventId || null,
-    });
+    
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "Please select a file to upload",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Get user profile for uploaded_by
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // Upload file to storage
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${timestamp}-${randomString}.${fileExt}`;
+      const folderName = eventId ? `events/${eventId}` : 'general';
+      const filePath = `${folderName}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(uploadData.path);
+
+      // Insert gallery item record
+      const { error: insertError } = await supabase.from('gallery_items').insert([{
+        title,
+        description,
+        media_type: mediaType,
+        media_url: publicUrl,
+        event_id: eventId || null,
+        uploaded_by: userData.user?.id,
+        is_public: true
+      }]);
+
+      if (insertError) throw insertError;
+
+      queryClient.invalidateQueries({ queryKey: ['admin-gallery'] });
+      toast({ 
+        title: "Success", 
+        description: "Media uploaded successfully!" 
+      });
+      onSuccess();
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to upload media",
+        variant: "destructive" 
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -375,10 +438,11 @@ const UploadMediaForm = ({ onSuccess }: { onSuccess: () => void }) => {
       </div>
       <div className="space-y-2">
         <Label>Description</Label>
-        <Input
+        <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Optional description"
+          rows={3}
         />
       </div>
       <div className="space-y-2">
@@ -394,23 +458,26 @@ const UploadMediaForm = ({ onSuccess }: { onSuccess: () => void }) => {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Media URL *</Label>
+        <Label>Upload File *</Label>
         <Input
-          value={mediaUrl}
-          onChange={(e) => setMediaUrl(e.target.value)}
-          placeholder="https://example.com/image.jpg"
-          type="url"
+          type="file"
+          onChange={handleFileChange}
+          accept={mediaType === 'image' ? 'image/*' : 'video/*'}
           required
         />
+        {file && (
+          <p className="text-sm text-muted-foreground">
+            Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Label>Link to Event (Optional)</Label>
-        <Select value={eventId} onValueChange={setEventId}>
+        <Select value={eventId || undefined} onValueChange={(value) => setEventId(value || "")}>
           <SelectTrigger>
-            <SelectValue placeholder="Select an event" />
+            <SelectValue placeholder="Select an event (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No event</SelectItem>
             {events?.map((event) => (
               <SelectItem key={event.id} value={event.id}>
                 {event.title}
@@ -419,8 +486,8 @@ const UploadMediaForm = ({ onSuccess }: { onSuccess: () => void }) => {
           </SelectContent>
         </Select>
       </div>
-      <Button type="submit" className="w-full" disabled={uploadMutation.isPending}>
-        {uploadMutation.isPending ? "Uploading..." : "Upload Media"}
+      <Button type="submit" className="w-full" disabled={uploading}>
+        {uploading ? "Uploading..." : "Upload Media"}
       </Button>
     </form>
   );

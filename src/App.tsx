@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { LandingProtectedRoute } from "@/components/auth/LandingProtectedRoute";
+import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
@@ -28,8 +30,11 @@ import ReportsAnalytics from "./pages/admin/ReportsAnalytics";
 import SystemSettings from "./pages/admin/SystemSettings";
 import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
+import Calendar from "./pages/Calendar";
 import TripManagement from "./pages/admin/TripManagement";
 import GalleryManagement from "./pages/admin/GalleryManagement";
+import AttendanceManagement from "./pages/admin/AttendanceManagement";
+import CalendarManagement from "./pages/admin/CalendarManagement";
 import ChangePassword from "./pages/ChangePassword";
 import DiagnosticPage from "./pages/DiagnosticPage";
 
@@ -43,6 +48,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Landing Page - Accessible to Everyone */}
+            <Route path="/" element={<Landing />} />
+            
             {/* Public Routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
@@ -55,11 +63,6 @@ const App = () => (
             } />
             
             {/* Protected Member Routes */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -108,6 +111,11 @@ const App = () => (
             <Route path="/trips/:id" element={
               <ProtectedRoute>
                 <TripDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/calendar" element={
+              <ProtectedRoute>
+                <Calendar />
               </ProtectedRoute>
             } />
             <Route path="/admin-setup" element={
@@ -168,6 +176,16 @@ const App = () => (
             <Route path="/admin/trips" element={
               <ProtectedRoute requireAdmin>
                 <TripManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/attendance" element={
+              <ProtectedRoute requireAdmin>
+                <AttendanceManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/calendar" element={
+              <ProtectedRoute requireAdmin>
+                <CalendarManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/gallery" element={

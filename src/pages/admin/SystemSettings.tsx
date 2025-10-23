@@ -48,7 +48,7 @@ const SystemSettings = () => {
   useEffect(() => {
     if (settings) {
       settings.forEach((setting: any) => {
-        const value = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
+        const value = setting.value; // Already parsed by Supabase (JSONB type)
         
         switch (setting.key) {
           case 'organization_name': setOrgName(value); break;
@@ -62,9 +62,11 @@ const SystemSettings = () => {
           case 'payment_razorpay_key': setRazorpayKey(value); break;
           case 'payment_razorpay_secret': setRazorpaySecret(value); break;
           case 'organization_contact':
-            setOrgPhone(value.phone || "");
-            setOrgEmail(value.email || "");
-            setOrgWebsite(value.website || "");
+            if (typeof value === 'object' && value !== null) {
+              setOrgPhone(value.phone || "");
+              setOrgEmail(value.email || "");
+              setOrgWebsite(value.website || "");
+            }
             break;
         }
       });
@@ -76,7 +78,7 @@ const SystemSettings = () => {
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
       const { error } = await supabase
         .from('system_settings')
-        .update({ value: JSON.stringify(value) })
+        .update({ value }) // Supabase handles JSONB automatically
         .eq('key', key);
       if (error) throw error;
     },
