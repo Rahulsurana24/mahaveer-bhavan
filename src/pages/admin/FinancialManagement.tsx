@@ -27,12 +27,15 @@ import {
   Calendar,
   CreditCard,
   User,
-  Receipt
+  Receipt,
+  Settings
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
+import { PaymentGatewayConfig } from "@/components/admin/PaymentGatewayConfig";
+import { FinancialReportGenerator } from "@/components/admin/FinancialReportGenerator";
 
 const FinancialManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -230,10 +233,12 @@ const FinancialManagement = () => {
             <p className="text-muted-foreground">Track donations and manage financial records</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
+            <FinancialReportGenerator>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </FinancialReportGenerator>
             <Button size="sm">
               <Receipt className="h-4 w-4 mr-2" />
               Generate Receipt
@@ -311,6 +316,10 @@ const FinancialManagement = () => {
             <TabsTrigger value="donations">Recent Donations</TabsTrigger>
             <TabsTrigger value="monthly">Monthly Reports</TabsTrigger>
             <TabsTrigger value="donors">Top Donors</TabsTrigger>
+            <TabsTrigger value="gateway">
+              <Settings className="h-4 w-4 mr-2" />
+              Gateway Config
+            </TabsTrigger>
           </TabsList>
 
           {/* Recent Donations */}
@@ -505,6 +514,11 @@ const FinancialManagement = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Payment Gateway Config Tab */}
+          <TabsContent value="gateway" className="space-y-6">
+            <PaymentGatewayConfig />
           </TabsContent>
         </Tabs>
       </div>
