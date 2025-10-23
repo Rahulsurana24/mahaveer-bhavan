@@ -23,6 +23,8 @@ import { TemplateManager } from '@/components/admin/TemplateManager';
 import { RecipientSelector, RecipientFilter } from '@/components/admin/RecipientSelector';
 import { MessageLogsViewer } from '@/components/admin/MessageLogsViewer';
 import { BulkMessaging } from '@/components/admin/BulkMessaging';
+import { WhatsAppSessionManager } from '@/components/admin/WhatsAppSessionManager';
+import { WhatsAppStatusIndicator } from '@/components/admin/WhatsAppStatusIndicator';
 
 const CommunicationCenter = () => {
   const { toast } = useToast();
