@@ -27,11 +27,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Calendar, MapPin, Users, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import { Search, Calendar, MapPin, Users, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
+import { CreateEventDialog } from "@/components/admin/CreateEventDialog";
 
 const EventManagement = () => {
   const { toast } = useToast();
@@ -142,10 +143,7 @@ const EventManagement = () => {
             <h2 className="text-2xl font-bold">Event Management</h2>
             <p className="text-muted-foreground">Create and manage trust events and activities</p>
           </div>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Event
-          </Button>
+          <CreateEventDialog />
         </div>
 
         {/* Filters and Search */}
