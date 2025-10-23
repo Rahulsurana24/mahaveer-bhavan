@@ -221,7 +221,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
                   <div className="font-medium">By Membership Type</div>
                   {value.type === 'membership_type' && (
                     <Select
-                      value={value.membershipType}
+                      value={value.membershipType || ""}
                       onValueChange={handleMembershipTypeChange}
                     >
                       <SelectTrigger className="mt-2">
@@ -259,7 +259,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
                   <div className="font-medium">By Event Registration</div>
                   {value.type === 'event_registration' && (
                     <Select
-                      value={value.eventId}
+                      value={value.eventId || ""}
                       onValueChange={handleEventChange}
                     >
                       <SelectTrigger className="mt-2">
@@ -287,7 +287,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
                   <div className="font-medium">By Trip Registration</div>
                   {value.type === 'trip_registration' && (
                     <Select
-                      value={value.tripId}
+                      value={value.tripId || ""}
                       onValueChange={handleTripChange}
                     >
                       <SelectTrigger className="mt-2">
