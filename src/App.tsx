@@ -173,12 +173,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/attendance" element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requireAdmin>
                 <AttendanceManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/calendar" element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requireAdmin>
                 <CalendarManagement />
               </ProtectedRoute>
             } />
