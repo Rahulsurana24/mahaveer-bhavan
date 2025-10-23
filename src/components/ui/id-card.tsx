@@ -3,8 +3,9 @@ import { Card } from '@/components/ui/card';
 import { generateMemberQRCode } from '@/utils/qrCode';
 import { generateIDCardPDF } from '@/utils/pdfGenerator';
 import { Button } from '@/components/ui/button';
-import { Download, Share2, Printer } from 'lucide-react';
+import { Download, Share2, Printer, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface IDCardProps {
   member: {
@@ -15,12 +16,14 @@ interface IDCardProps {
     email: string;
     phone: string;
     created_at?: string;
+    status?: string;
   };
 }
 
 export const IDCard = ({ member }: IDCardProps) => {
   const [qrCode, setQrCode] = useState<string>('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const generateQR = async () => {
@@ -75,157 +78,176 @@ export const IDCard = ({ member }: IDCardProps) => {
     window.print();
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   // Calculate dates
-  const joinDate = member.created_at 
-    ? new Date(member.created_at).toLocaleDateString('en-GB').replace(/\//g, '/')
-    : new Date().toLocaleDateString('en-GB').replace(/\//g, '/');
+  const birthDate = member.created_at 
+    ? new Date(member.created_at).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')
+    : '01/01/1990';
   
-  const expireDate = member.created_at
-    ? new Date(new Date(member.created_at).setFullYear(new Date(member.created_at).getFullYear() + 1)).toLocaleDateString('en-GB').replace(/\//g, '/')
-    : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('en-GB').replace(/\//g, '/');
+  const expirationDate = member.created_at
+    ? new Date(new Date(member.created_at).setFullYear(new Date(member.created_at).getFullYear() + 1)).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')
+    : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/');
+
+  const isValid = member.status === 'active' || !member.status;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-md mx-auto">
       {/* ID Card */}
-      <Card id="member-id-card" className="w-full max-w-3xl mx-auto overflow-hidden shadow-lg print:shadow-none">
-        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[400px]">
-          {/* Left Side - Colored Background with Photo and Details */}
-          <div className="bg-gradient-to-br from-teal-600 to-teal-800 text-white p-8 flex flex-col justify-between">
-            {/* Organization Name */}
-            <div className="text-center mb-6">
-              <h2 className="text-lg font-bold tracking-wide uppercase">Mahaveer Bhavan</h2>
-              <div className="h-0.5 w-20 bg-white/50 mx-auto mt-2"></div>
-            </div>
+      <Card id="member-id-card" className="overflow-hidden shadow-xl print:shadow-none bg-gradient-to-b from-primary/5 to-background">
+        {/* Header with Back Button */}
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 print:hidden">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleBack}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-semibold">ID Card</h1>
+          </div>
+        </div>
 
+        {/* Card Content */}
+        <div className="p-8 space-y-6">
+          {/* Photo and QR Code Row */}
+          <div className="flex justify-center items-start gap-6">
             {/* Member Photo */}
-            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-              <div className="w-32 h-32 rounded-full border-4 border-white/30 overflow-hidden bg-white shadow-lg">
+            <div className="flex-shrink-0">
+              <div className="w-28 h-28 rounded-2xl overflow-hidden bg-primary/10 border-4 border-primary/20 shadow-lg">
                 <img 
                   src={member.photo_url || '/placeholder-avatar.png'} 
                   alt={member.full_name}
                   className="w-full h-full object-cover"
                 />
               </div>
-
-              {/* Member Name and Type */}
-              <div className="text-center">
-                <h3 className="text-xl font-bold mb-1">{member.full_name}</h3>
-                <p className="text-sm bg-white/20 px-4 py-1 rounded-full inline-block">
-                  {member.membership_type}
-                </p>
-              </div>
-            </div>
-
-            {/* Member Details */}
-            <div className="space-y-2 text-sm border-t border-white/20 pt-4">
-              <div className="flex justify-between">
-                <span className="text-white/80">ID No:</span>
-                <span className="font-semibold">{member.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/80">Department:</span>
-                <span className="font-semibold">{member.membership_type}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-white/80">Email:</span>
-                <span className="font-medium text-xs break-all">{member.email}</span>
-              </div>
             </div>
 
             {/* QR Code */}
-            <div className="flex justify-center mt-4">
-              {qrCode ? (
-                <div className="bg-white p-2 rounded">
+            {qrCode && (
+              <div className="flex-shrink-0">
+                <div className="w-28 h-28 bg-white p-2 rounded-xl shadow-lg border-2 border-primary/10">
                   <img 
                     src={qrCode} 
                     alt="Member QR Code"
-                    className="w-20 h-20"
+                    className="w-full h-full"
                   />
                 </div>
-              ) : (
-                <div className="w-24 h-24 bg-white/10 rounded flex items-center justify-center">
-                  <span className="text-xs">Loading QR...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Member Name */}
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold text-foreground">{member.full_name}</h2>
+            <p className="text-sm text-muted-foreground">{member.membership_type}</p>
+          </div>
+
+          {/* Member Details Grid */}
+          <div className="space-y-4 bg-background rounded-xl p-6 border border-border">
+            {/* Birth Date and Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Birth date</p>
+                <p className="font-semibold text-foreground">{birthDate}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Status</p>
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-green-600">Valid</span>
+                  <CheckCircle className="w-4 h-4 text-green-600 fill-green-600" />
                 </div>
-              )}
-            </div>
-
-            {/* Print Card Button */}
-            <div className="mt-4 print:hidden">
-              <Button 
-                onClick={handlePrint}
-                variant="secondary"
-                size="sm"
-                className="w-full bg-white text-teal-800 hover:bg-white/90"
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Print Card
-              </Button>
-            </div>
-          </div>
-
-          {/* Right Side - White Background with Terms */}
-          <div className="bg-white p-8 flex flex-col justify-between text-gray-800">
-            {/* Organization Name */}
-            <div className="text-center mb-6">
-              <h2 className="text-lg font-bold tracking-wide uppercase text-teal-800">Mahaveer Bhavan</h2>
-              <div className="h-0.5 w-20 bg-teal-600 mx-auto mt-2"></div>
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="flex-1">
-              <h3 className="text-center font-bold text-base mb-4 tracking-wide">TERMS & CONDITIONS</h3>
-              
-              <ul className="space-y-3 text-xs text-gray-700">
-                <li className="flex gap-2">
-                  <span className="font-bold shrink-0">1.</span>
-                  <span>Identification must be worn at all times during working hours for identification purposes.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-bold shrink-0">2.</span>
-                  <span>Authorized User The ID card is strictly for official use and should not be used for unauthorized purposes.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Dates */}
-            <div className="space-y-3 border-t border-gray-200 pt-6 mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-gray-600">Join</span>
-                <span className="font-bold">{joinDate}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-gray-600">Expire</span>
-                <span className="font-bold">{expireDate}</span>
               </div>
             </div>
 
-            {/* Website Footer */}
-            <div className="text-center mt-6 pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500">www.mahaveerbhavan.org</p>
+            {/* Phone and ID Number */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Phone No.</p>
+                <p className="font-semibold text-foreground">{member.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">ID No.</p>
+                <p className="font-semibold text-foreground font-mono">{member.id}</p>
+              </div>
+            </div>
+
+            {/* Email and Expiration */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">E-mail</p>
+                <p className="font-semibold text-foreground text-sm break-all">{member.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Expiration date</p>
+                <p className="font-semibold text-foreground">{expirationDate}</p>
+              </div>
             </div>
           </div>
+
+          {/* Large QR Code for Scanning */}
+          <div className="space-y-3">
+            <p className="text-center text-sm font-medium text-muted-foreground">Scan QR Code</p>
+            {qrCode && (
+              <div className="flex justify-center">
+                <div className="bg-white p-4 rounded-2xl shadow-lg border-2 border-primary/10">
+                  <img 
+                    src={qrCode} 
+                    alt="Member QR Code"
+                    className="w-48 h-48"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="text-center text-xs text-muted-foreground font-mono">{member.id}</p>
+          </div>
+
+          {/* Back to Home Button */}
+          <Button 
+            onClick={handleBack}
+            variant="outline" 
+            className="w-full h-12 text-base font-medium print:hidden"
+          >
+            Back to home
+          </Button>
         </div>
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 justify-center print:hidden">
-        <Button onClick={handleDownload} className="gap-2 bg-teal-600 hover:bg-teal-700">
+      <div className="flex flex-col sm:flex-row gap-3 print:hidden">
+        <Button 
+          onClick={handleDownload} 
+          className="flex-1 gap-2 bg-primary hover:bg-primary/90 h-11"
+        >
           <Download className="w-4 h-4" />
           Download PDF
         </Button>
-        <Button onClick={handleShare} variant="outline" className="gap-2 border-teal-600 text-teal-600 hover:bg-teal-50">
+        <Button 
+          onClick={handleShare} 
+          variant="outline" 
+          className="flex-1 gap-2 border-primary text-primary hover:bg-primary/10 h-11"
+        >
           <Share2 className="w-4 h-4" />
           Share
         </Button>
-        <Button onClick={handlePrint} variant="outline" className="gap-2">
+        <Button 
+          onClick={handlePrint} 
+          variant="outline" 
+          className="flex-1 gap-2 h-11"
+        >
           <Printer className="w-4 h-4" />
           Print
         </Button>
       </div>
 
-      {/* Print Instructions */}
+      {/* Organization Footer */}
       <div className="text-center text-sm text-muted-foreground print:hidden">
-        <p>Tip: Use the Print button for best results when printing the ID card</p>
+        <p className="font-medium">Mahaveer Bhavan</p>
+        <p className="text-xs">www.mahaveerbhavan.org</p>
       </div>
     </div>
   );
