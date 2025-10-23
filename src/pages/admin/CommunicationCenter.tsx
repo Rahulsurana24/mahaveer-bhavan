@@ -208,10 +208,13 @@ const CommunicationCenter = () => {
             <h2 className="text-2xl font-bold">Communication Center</h2>
             <p className="text-muted-foreground">Send multi-channel messages to members</p>
           </div>
-          <Button onClick={() => setIsBulkMessagingOpen(true)} variant="outline">
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Bulk Messaging
-          </Button>
+          <div className="flex gap-2">
+            <WhatsAppStatusIndicator />
+            <Button onClick={() => setIsBulkMessagingOpen(true)} variant="outline">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Bulk Messaging
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="compose" className="space-y-6">
@@ -394,6 +397,11 @@ const CommunicationCenter = () => {
           {/* Message History Tab */}
           <TabsContent value="history" className="space-y-6">
             <MessageLogsViewer />
+          </TabsContent>
+
+          {/* WhatsApp Settings Tab */}
+          <TabsContent value="whatsapp" className="space-y-6">
+            <WhatsAppSessionManager />
           </TabsContent>
         </Tabs>
 
