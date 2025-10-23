@@ -28,72 +28,91 @@ import {
   Info,
   CheckCircle
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 const Notifications = () => {
   const [filter, setFilter] = useState("all");
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const notifications = [
-    {
-      id: "notif-1",
-      type: "event",
-      title: "Monthly Satsang Tomorrow",
-      message: "Don't forget about the monthly satsang scheduled for tomorrow at 6:00 PM in the main hall.",
-      time: "2 hours ago",
-      read: false,
-      priority: "high",
-      category: "events"
-    },
-    {
-      id: "notif-2",
-      type: "donation",
-      title: "Donation Receipt Generated",
-      message: "Your donation receipt for ₹5,000 has been generated and emailed to you.",
-      time: "1 day ago",
-      read: true,
-      priority: "medium",
-      category: "donations"
-    },
-    {
-      id: "notif-3",
-      type: "message",
-      title: "New Message from Raj Patel",
-      message: "Looking forward to the satsang tomorrow! Will there be any special arrangements?",
-      time: "2 days ago",
-      read: false,
-      priority: "medium",
-      category: "messages"
-    },
-    {
-      id: "notif-4",
-      type: "system",
-      title: "Profile Updated Successfully",
-      message: "Your profile information has been updated successfully.",
-      time: "3 days ago",
-      read: true,
-      priority: "low",
-      category: "system"
-    },
-    {
-      id: "notif-5",
-      type: "event",
-      title: "Event Registration Confirmed",
-      message: "Your registration for the Charity Drive has been confirmed. Thank you for participating!",
-      time: "5 days ago",
-      read: true,
-      priority: "high",
-      category: "events"
-    },
-    {
-      id: "notif-6",
-      type: "announcement",
-      title: "New Temple Visit Announced",
-      message: "We're organizing a visit to Palitana temples next month. Registration starts tomorrow.",
-      time: "1 week ago",
-      read: false,
-      priority: "high",
-      category: "announcements"
+  // Fetch notifications from database
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('auth_id', userData.user?.id)
+        .single();
+
+      if (!profile) return [];
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
     }
-  ];
+  });
+
+  // Mark as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase.rpc('mark_notification_read', {
+        p_notification_id: notificationId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: "Notification marked as read" });
+    }
+  });
+
+  // Mark all as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('mark_all_notifications_read');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: "All notifications marked as read" });
+    }
+  });
+
+  // Delete notification mutation
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: "Notification deleted" });
+    }
+  });
+
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.is_read) {
+      markAsReadMutation.mutate(notification.id);
+    }
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
 
   const getNotificationIcon = (type: string) => {
     const icons = {
@@ -125,9 +144,9 @@ const Notifications = () => {
 
   const filteredNotifications = filter === "all" 
     ? notifications 
-    : notifications.filter(notif => notif.category === filter);
+    : notifications.filter(notif => notif.type === filter);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <MainLayout title="Notifications">
@@ -141,7 +160,12 @@ const Notifications = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => markAllAsReadMutation.mutate()}
+              disabled={markAllAsReadMutation.isPending || unreadCount === 0}
+            >
               <Check className="h-4 w-4 mr-2" />
               Mark All Read
             </Button>
@@ -180,12 +204,12 @@ const Notifications = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="events">Events</SelectItem>
-                      <SelectItem value="donations">Donations</SelectItem>
-                      <SelectItem value="messages">Messages</SelectItem>
-                      <SelectItem value="announcements">Announcements</SelectItem>
-                      <SelectItem value="system">System</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="info">Info</SelectItem>
+                      <SelectItem value="success">Success</SelectItem>
+                      <SelectItem value="warning">Warning</SelectItem>
+                      <SelectItem value="error">Error</SelectItem>
+                      <SelectItem value="announcement">Announcement</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -194,63 +218,87 @@ const Notifications = () => {
 
             {/* Notifications List */}
             <div className="space-y-3">
-              {filteredNotifications.map((notification) => {
-                const Icon = getNotificationIcon(notification.type);
-                return (
-                  <Card 
-                    key={notification.id} 
-                    className={`cursor-pointer transition-colors ${
-                      !notification.read 
-                        ? "border-l-4 border-l-primary bg-primary/5" 
-                        : "hover:bg-muted/50"
-                    }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-full bg-muted ${getNotificationColor(notification.type, notification.priority)}`}>
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className={`font-medium ${!notification.read ? 'font-semibold' : ''}`}>
-                                  {notification.title}
-                                </h3>
-                                {!notification.read && (
-                                  <div className="w-2 h-2 bg-primary rounded-full" />
-                                )}
-                                {getPriorityBadge(notification.priority)}
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {notification.message}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <span>{notification.time}</span>
+              {isLoading ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-4">Loading notifications...</p>
+                  </CardContent>
+                </Card>
+              ) : filteredNotifications.length > 0 ? (
+                filteredNotifications.map((notification: any) => {
+                  const Icon = getNotificationIcon(notification.type);
+                  return (
+                    <Card 
+                      key={notification.id} 
+                      className={`cursor-pointer transition-colors ${
+                        !notification.is_read 
+                          ? "border-l-4 border-l-primary bg-primary/5" 
+                          : "hover:bg-muted/50"
+                      }`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-2 rounded-full bg-muted ${getNotificationColor(notification.type, 'medium')}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className={`font-medium ${!notification.is_read ? 'font-semibold' : ''}`}>
+                                    {notification.title}
+                                  </h3>
+                                  {!notification.is_read && (
+                                    <div className="w-2 h-2 bg-primary rounded-full" />
+                                  )}
+                                  <Badge variant={notification.type === 'error' ? 'destructive' : 'secondary'}>
+                                    {notification.type}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {notification.message}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{format(new Date(notification.created_at), 'MMM d, h:mm a')}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          {!notification.read && (
-                            <Button variant="ghost" size="sm">
-                              <Check className="h-4 w-4" />
+                          
+                          <div className="flex items-center gap-2">
+                            {!notification.is_read && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsReadMutation.mutate(notification.id);
+                                }}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNotificationMutation.mutate(notification.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          )}
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-              
-              {filteredNotifications.length === 0 && (
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Bell className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -258,7 +306,7 @@ const Notifications = () => {
                     <p className="text-muted-foreground">
                       {filter === "all" 
                         ? "You're all caught up! No new notifications to show."
-                        : `No notifications in the ${filter} category.`
+                        : `No notifications of type ${filter}.`
                       }
                     </p>
                   </CardContent>
