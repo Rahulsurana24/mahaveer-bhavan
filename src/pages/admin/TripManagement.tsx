@@ -171,10 +171,11 @@ const TripManagement = () => {
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
                           trip.status === 'open' ? 'bg-green-100 text-green-800' : 
-                          trip.status === 'published' ? 'bg-blue-100 text-blue-800' :
+                          trip.status === 'full' ? 'bg-blue-100 text-blue-800' :
+                          trip.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {trip.status}
+                          {trip.status || 'open'}
                         </span>
                       </TableCell>
                       <TableCell>
