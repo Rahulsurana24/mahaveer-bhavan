@@ -9,15 +9,26 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import dotenv from 'dotenv';
 
-// Load environment variables
+// Load environment variables manually
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, '.env') });
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Read .env file manually
+const envFile = readFileSync(join(__dirname, '.env'), 'utf8');
+const envVars = {};
+envFile.split('\n').forEach(line => {
+  const trimmed = line.trim();
+  if (trimmed && !trimmed.startsWith('#')) {
+    const [key, ...valueParts] = trimmed.split('=');
+    if (key && valueParts.length) {
+      envVars[key.trim()] = valueParts.join('=').replace(/["']/g, '');
+    }
+  }
+});
+
+const supabaseUrl = envVars.VITE_SUPABASE_URL;
+const supabaseKey = envVars.VITE_SUPABASE_ANON_KEY || envVars.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Error: Supabase credentials not found in .env file');
