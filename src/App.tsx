@@ -166,8 +166,18 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/trips" element={
-              <ProtectedRoute requireAdmin>
+              <ProtectedRoute requiredRole="admin">
                 <TripManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/attendance" element={
+              <ProtectedRoute requiredRole="admin">
+                <AttendanceManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/calendar" element={
+              <ProtectedRoute requiredRole="admin">
+                <CalendarManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/gallery" element={
