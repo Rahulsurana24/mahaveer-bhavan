@@ -615,8 +615,7 @@ const EditTripForm = ({ trip, onSuccess }: { trip: any; onSuccess: () => void })
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="published">Published</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="full">Full</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
