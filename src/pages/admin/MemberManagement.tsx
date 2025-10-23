@@ -34,12 +34,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter, Eye, CreditCard } from "lucide-react";
+import { Search, Plus, Download, MoreHorizontal, Edit, Trash2, Filter, Eye, CreditCard, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/ui/loading";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { MemberProfileModal } from "@/components/admin/MemberProfileModal";
+import { MemberImport } from "@/components/admin/MemberImport";
 
 const MemberManagement = () => {
   const [members, setMembers] = useState<any[]>([]);
@@ -53,6 +54,7 @@ const MemberManagement = () => {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [viewingMemberId, setViewingMemberId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -383,6 +385,10 @@ const MemberManagement = () => {
             <Button variant="outline" onClick={exportMembers}>
               <Download className="h-4 w-4 mr-2" />
               Export
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
             </Button>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -728,6 +734,12 @@ const MemberManagement = () => {
             }}
           />
         )}
+
+        {/* Member Import Dialog */}
+        <MemberImport
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+        />
       </div>
     </AdminLayout>
   );
