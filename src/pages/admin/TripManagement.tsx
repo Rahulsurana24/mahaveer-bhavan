@@ -8,13 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Users, FileText, Calendar, DollarSign, Plane } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, FileText, Calendar, DollarSign, Plane, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TripPricingDialog } from '@/components/admin/TripPricingDialog';
 import { TripLogisticsDialog } from '@/components/admin/TripLogisticsDialog';
 import { TripFormFieldsManager } from '@/components/admin/TripFormFieldsManager';
+import { TripAllocationImport } from '@/components/admin/TripAllocationImport';
 
 const TripManagement = () => {
   const [trips, setTrips] = useState<any[]>([]);
@@ -28,6 +29,7 @@ const TripManagement = () => {
   const [isLogisticsDialogOpen, setIsLogisticsDialogOpen] = useState(false);
   const [formFieldsTrip, setFormFieldsTrip] = useState<any>(null);
   const [isFormFieldsDialogOpen, setIsFormFieldsDialogOpen] = useState(false);
+  const [isAllocationImportOpen, setIsAllocationImportOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -109,25 +111,21 @@ const TripManagement = () => {
   return (
     <AdminLayout title="Trip Management">
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Trip Management</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create New Trip
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New Trip</DialogTitle>
-              </DialogHeader>
-              <TripForm onSuccess={() => {
-                setIsDialogOpen(false);
-                loadTrips();
-              }} />
-            </DialogContent>
-          </Dialog>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold">Trip Management</h2>
+            <p className="text-muted-foreground">Manage trips and travel programs</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsAllocationImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import Allocations
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Trip
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -259,6 +257,12 @@ const TripManagement = () => {
             onOpenChange={setIsFormFieldsDialogOpen}
           />
         )}
+
+        {/* Trip Allocation Import Dialog */}
+        <TripAllocationImport
+          open={isAllocationImportOpen}
+          onOpenChange={setIsAllocationImportOpen}
+        />
       </div>
     </AdminLayout>
   );
