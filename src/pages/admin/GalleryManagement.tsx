@@ -473,12 +473,11 @@ const UploadMediaForm = ({ onSuccess }: { onSuccess: () => void }) => {
       </div>
       <div className="space-y-2">
         <Label>Link to Event (Optional)</Label>
-        <Select value={eventId} onValueChange={setEventId}>
+        <Select value={eventId || undefined} onValueChange={(value) => setEventId(value || "")}>
           <SelectTrigger>
-            <SelectValue placeholder="Select an event" />
+            <SelectValue placeholder="Select an event (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No event</SelectItem>
             {events?.map((event) => (
               <SelectItem key={event.id} value={event.id}>
                 {event.title}
