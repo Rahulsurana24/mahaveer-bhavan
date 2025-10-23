@@ -146,13 +146,20 @@ const AttendanceManagement = () => {
       notes?: string;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
+      
+      // Get user_profile ID
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('auth_id', userData.user?.id)
+        .single();
 
       const { error } = await supabase
         .from('attendance_records')
         .insert({
           member_id: data.memberId,
           item_id: data.itemId,
-          marked_by: userData.user?.id,
+          marked_by: profile?.id,
           scan_method: data.scanMethod,
           notes: data.notes || null
         });
@@ -184,13 +191,20 @@ const AttendanceManagement = () => {
   const createItemMutation = useMutation({
     mutationFn: async (data: { name: string; description: string }) => {
       const { data: userData } = await supabase.auth.getUser();
+      
+      // Get user_profile ID
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('auth_id', userData.user?.id)
+        .single();
 
       const { error } = await supabase
         .from('attendance_items')
         .insert({
           item_name: data.name,
           description: data.description,
-          created_by: userData.user?.id
+          created_by: profile?.id
         });
 
       if (error) throw error;
