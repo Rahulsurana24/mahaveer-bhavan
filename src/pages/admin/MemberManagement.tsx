@@ -120,12 +120,12 @@ const MemberManagement = () => {
   const generateMemberId = async (membershipType: string) => {
     const prefixMap: Record<string, string> = {
       Trustee: "TR",
-      Tapasvi: "TP",
-      Karyakarta: "KR",
-      Labharti: "LB",
-      Extra: "EX",
+      Tapasvi: "T",
+      Karyakarta: "K",
+      Labharti: "L",
+      Extra: "E",
     };
-    const prefix = prefixMap[membershipType] || "EX";
+    const prefix = prefixMap[membershipType] || "E";
     
     const { data } = await supabase
       .from('members')
