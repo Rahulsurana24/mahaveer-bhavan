@@ -15,12 +15,14 @@ import {
   Phone, 
   Send, 
   Calendar,
-  Loader2
+  Loader2,
+  FileSpreadsheet
 } from "lucide-react";
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
 import { TemplateManager } from '@/components/admin/TemplateManager';
 import { RecipientSelector, RecipientFilter } from '@/components/admin/RecipientSelector';
 import { MessageLogsViewer } from '@/components/admin/MessageLogsViewer';
+import { BulkMessaging } from '@/components/admin/BulkMessaging';
 
 const CommunicationCenter = () => {
   const { toast } = useToast();
@@ -36,6 +38,7 @@ const CommunicationCenter = () => {
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['email']);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [isBulkMessagingOpen, setIsBulkMessagingOpen] = useState(false);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -198,9 +201,15 @@ const CommunicationCenter = () => {
     <AdminLayout title="Communication Center">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold">Communication Center</h2>
-          <p className="text-muted-foreground">Send multi-channel messages to members</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold">Communication Center</h2>
+            <p className="text-muted-foreground">Send multi-channel messages to members</p>
+          </div>
+          <Button onClick={() => setIsBulkMessagingOpen(true)} variant="outline">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Bulk Messaging
+          </Button>
         </div>
 
         <Tabs defaultValue="compose" className="space-y-6">
@@ -384,6 +393,12 @@ const CommunicationCenter = () => {
             <MessageLogsViewer />
           </TabsContent>
         </Tabs>
+
+        {/* Bulk Messaging Dialog */}
+        <BulkMessaging
+          open={isBulkMessagingOpen}
+          onOpenChange={setIsBulkMessagingOpen}
+        />
       </div>
     </AdminLayout>
   );
