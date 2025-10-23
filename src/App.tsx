@@ -30,6 +30,7 @@ import Trips from "./pages/Trips";
 import TripDetails from "./pages/TripDetails";
 import TripManagement from "./pages/admin/TripManagement";
 import ChangePassword from "./pages/ChangePassword";
+import DiagnosticPage from "./pages/DiagnosticPage";
 
 const queryClient = new QueryClient();
 
@@ -113,6 +114,9 @@ const App = () => (
                 <AdminSetupPage />
               </ProtectedRoute>
             } />
+            
+            {/* Diagnostic Route */}
+            <Route path="/diagnostic" element={<DiagnosticPage />} />
             
             {/* Protected Admin Routes */}
             <Route path="/admin" element={
