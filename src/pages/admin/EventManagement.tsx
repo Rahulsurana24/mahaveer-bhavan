@@ -27,13 +27,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Calendar, MapPin, Users, MoreHorizontal, Edit, Trash2, Eye, Plus } from "lucide-react";
+import { Search, Calendar, MapPin, Users, MoreHorizontal, Edit, Trash2, Eye, Plus, DollarSign } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
 import { CreateEventDialog } from "@/components/admin/CreateEventDialog";
 import { EditEventDialog } from "@/components/admin/EditEventDialog";
+import { EventPricingDialog } from "@/components/admin/EventPricingDialog";
 
 const EventManagement = () => {
   const { toast } = useToast();
@@ -43,6 +44,8 @@ const EventManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [pricingEvent, setPricingEvent] = useState<any>(null);
+  const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
 
   // Fetch events from database
   const { data: events, isLoading } = useQuery({
@@ -112,6 +115,11 @@ const EventManagement = () => {
   const handleEdit = (event: any) => {
     setEditingEvent(event);
     setIsEditDialogOpen(true);
+  };
+
+  const handleManagePricing = (event: any) => {
+    setPricingEvent(event);
+    setIsPricingDialogOpen(true);
   };
 
   const getStatusBadge = (isPublished: boolean) => {
@@ -284,6 +292,10 @@ const EventManagement = () => {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Event
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleManagePricing(event)}>
+                              <DollarSign className="mr-2 h-4 w-4" />
+                              Manage Pricing
+                            </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Users className="mr-2 h-4 w-4" />
                               Manage Registrations
@@ -313,6 +325,16 @@ const EventManagement = () => {
             event={editingEvent}
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
+          />
+        )}
+
+        {/* Event Pricing Dialog */}
+        {pricingEvent && (
+          <EventPricingDialog
+            eventId={pricingEvent.id}
+            eventTitle={pricingEvent.title}
+            open={isPricingDialogOpen}
+            onOpenChange={setIsPricingDialogOpen}
           />
         )}
       </div>
