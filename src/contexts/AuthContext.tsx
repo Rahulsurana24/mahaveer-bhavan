@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      // First create the auth user
+      // First create the auth user (trigger will create user_profiles and members)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
         password,
@@ -68,13 +68,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: authError };
       }
 
-      // If user was created and we have memberData, update the user_profiles
+      // If user was created and we have memberData, update both tables
       if (authData.user && memberData) {
-        // Wait a bit for the trigger to create the basic profile
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for the trigger to create the basic entries
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Now update the profile with additional member data
-        const { error: updateError } = await supabase
+        // Update user_profiles with additional data
+        const { error: profileUpdateError } = await supabase
           .from('user_profiles')
           .update({
             full_name: memberData.full_name,
@@ -94,9 +94,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           })
           .eq('auth_id', authData.user.id);
 
-        if (updateError) {
-          console.error('Profile update error:', updateError);
-          // Don't fail signup if profile update fails, just log it
+        if (profileUpdateError) {
+          console.error('Profile update error:', profileUpdateError);
+        }
+
+        // Update members with additional data
+        const { error: memberUpdateError } = await supabase
+          .from('members')
+          .update({
+            full_name: memberData.full_name,
+            first_name: memberData.first_name,
+            middle_name: memberData.middle_name,
+            last_name: memberData.last_name,
+            phone: memberData.phone,
+            date_of_birth: memberData.date_of_birth,
+            gender: memberData.gender,
+            address: memberData.address,
+            street_address: memberData.street_address,
+            city: memberData.city,
+            state: memberData.state,
+            postal_code: memberData.postal_code,
+            country: memberData.country,
+            emergency_contact: memberData.emergency_contact,
+            membership_type: memberData.membership_type || 'member'
+          })
+          .eq('auth_id', authData.user.id);
+
+        if (memberUpdateError) {
+          console.error('Member update error:', memberUpdateError);
         }
       }
       
