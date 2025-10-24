@@ -73,7 +73,7 @@ Keep responses concise (2-3 paragraphs max).`
         'X-Title': 'Mahaveer Bhavan AI Guide'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        model: 'google/gemini-flash-1.5',
         messages: formattedMessages,
         temperature: 0.7,
         max_tokens: 500
