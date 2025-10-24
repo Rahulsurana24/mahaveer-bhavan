@@ -48,17 +48,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string, memberData?: any) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: memberData
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      // First create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.toLowerCase().trim(),
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: memberData?.full_name || email
+          }
+        }
+      });
+      
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        return { error: authError };
       }
-    });
-    return { error };
+
+      // If user was created and we have memberData, update the user_profiles
+      if (authData.user && memberData) {
+        // Wait a bit for the trigger to create the basic profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Now update the profile with additional member data
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({
+            full_name: memberData.full_name,
+            first_name: memberData.first_name,
+            middle_name: memberData.middle_name,
+            last_name: memberData.last_name,
+            phone: memberData.phone,
+            date_of_birth: memberData.date_of_birth,
+            gender: memberData.gender,
+            address: memberData.address,
+            street_address: memberData.street_address,
+            city: memberData.city,
+            state: memberData.state,
+            postal_code: memberData.postal_code,
+            country: memberData.country,
+            emergency_contact: memberData.emergency_contact
+          })
+          .eq('auth_id', authData.user.id);
+
+        if (updateError) {
+          console.error('Profile update error:', updateError);
+          // Don't fail signup if profile update fails, just log it
+        }
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Signup catch error:', error);
+      return { error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
