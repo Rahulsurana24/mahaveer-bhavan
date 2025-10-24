@@ -9,14 +9,13 @@
 -- Date: 2025-10-24
 -- ============================================================================
 
-\echo '🚀 Starting WhatsApp Messaging System Setup...'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '🚀 Starting WhatsApp Messaging System Setup...'; END $$;
 
 -- ============================================================================
 -- PART 1: CORE MESSAGING TABLES
 -- ============================================================================
 
-\echo '📦 Part 1/3: Creating core messaging tables...'
+DO $$ BEGIN RAISE NOTICE '📦 Part 1/7: Creating core messaging tables...'; END $$;
 
 -- Update existing messages table with multimedia support
 ALTER TABLE messages
@@ -85,14 +84,13 @@ CREATE TABLE IF NOT EXISTS voice_messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-\echo '✅ Core messaging tables created'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Core messaging tables created'; END $$;
 
 -- ============================================================================
 -- PART 2: INDEXES FOR PERFORMANCE
 -- ============================================================================
 
-\echo '⚡ Part 2/3: Creating indexes...'
+DO $$ BEGIN RAISE NOTICE '⚡ Part 2/7: Creating indexes...'; END $$;
 
 CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON messages(recipient_id);
@@ -109,14 +107,13 @@ CREATE INDEX IF NOT EXISTS idx_message_reactions_user_id ON message_reactions(us
 CREATE INDEX IF NOT EXISTS idx_voice_messages_message_id ON voice_messages(message_id);
 CREATE INDEX IF NOT EXISTS idx_typing_indicators_sender_recipient ON typing_indicators(sender_id, recipient_id);
 
-\echo '✅ Indexes created'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Indexes created'; END $$;
 
 -- ============================================================================
 -- PART 3: ROW LEVEL SECURITY POLICIES
 -- ============================================================================
 
-\echo '🔒 Part 3/3: Configuring security policies...'
+DO $$ BEGIN RAISE NOTICE '🔒 Part 3/7: Configuring security policies...'; END $$;
 
 -- Enable RLS on new tables
 ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
@@ -266,14 +263,13 @@ CREATE POLICY "Users can view their own messages"
     ))
   );
 
-\echo '✅ Security policies configured'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Security policies configured'; END $$;
 
 -- ============================================================================
 -- PART 4: TRIGGERS AND FUNCTIONS
 -- ============================================================================
 
-\echo '⚙️  Part 4/3: Creating triggers and functions...'
+DO $$ BEGIN RAISE NOTICE '⚙️  Part 4/7: Creating triggers and functions...'; END $$;
 
 -- Function: Update delivered_at timestamp
 CREATE OR REPLACE FUNCTION update_message_delivered()
@@ -325,14 +321,13 @@ CREATE TRIGGER update_group_on_message
   WHEN (NEW.group_id IS NOT NULL)
   EXECUTE FUNCTION update_group_updated_at();
 
-\echo '✅ Triggers and functions created'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Triggers and functions created'; END $$;
 
 -- ============================================================================
 -- PART 5: STORAGE CONFIGURATION
 -- ============================================================================
 
-\echo '📦 Part 5/3: Configuring storage bucket...'
+DO $$ BEGIN RAISE NOTICE '📦 Part 5/7: Configuring storage bucket...'; END $$;
 
 -- Create message-media storage bucket
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -384,14 +379,13 @@ USING (
   auth.uid()::text = (storage.foldername(name))[1]
 );
 
-\echo '✅ Storage bucket configured'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Storage bucket configured'; END $$;
 
 -- ============================================================================
 -- PART 6: REALTIME CONFIGURATION
 -- ============================================================================
 
-\echo '🔴 Part 6/3: Enabling realtime...'
+DO $$ BEGIN RAISE NOTICE '🔴 Part 6/7: Enabling realtime...'; END $$;
 
 -- Enable realtime for messaging tables (with error handling)
 DO $$
@@ -437,14 +431,13 @@ BEGIN
   END;
 END $$;
 
-\echo '✅ Realtime enabled'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Realtime enabled'; END $$;
 
 -- ============================================================================
 -- PART 7: HELPFUL VIEWS
 -- ============================================================================
 
-\echo '📊 Part 7/3: Creating helper views...'
+DO $$ BEGIN RAISE NOTICE '📊 Part 7/7: Creating helper views...'; END $$;
 
 -- Storage statistics view
 CREATE OR REPLACE VIEW message_media_stats AS
@@ -461,18 +454,11 @@ SELECT
 FROM storage.objects
 WHERE bucket_id = 'message-media';
 
-\echo '✅ Helper views created'
-\echo ''
+DO $$ BEGIN RAISE NOTICE '✅ Helper views created'; END $$;
 
 -- ============================================================================
 -- FINAL VERIFICATION
 -- ============================================================================
-
-\echo '✅ ============================================'
-\echo '✅  WHATSAPP MESSAGING SYSTEM SETUP COMPLETE!'
-\echo '✅ ============================================'
-\echo ''
-\echo '📋 Verification Checklist:'
 
 DO $$
 DECLARE
@@ -480,6 +466,14 @@ DECLARE
   bucket_exists BOOLEAN;
   realtime_count INTEGER;
 BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '✅ ============================================';
+  RAISE NOTICE '✅  WHATSAPP MESSAGING SYSTEM SETUP COMPLETE!';
+  RAISE NOTICE '✅ ============================================';
+  RAISE NOTICE '';
+  RAISE NOTICE '📋 Verification Checklist:';
+  RAISE NOTICE '';
+
   -- Check tables
   SELECT COUNT(*) INTO table_count FROM information_schema.tables
   WHERE table_schema = 'public'
@@ -494,17 +488,18 @@ BEGIN
   AND schemaname = 'public'
   AND tablename IN ('messages', 'typing_indicators', 'groups');
 
-  RAISE NOTICE '';
   RAISE NOTICE '✅ Tables created: % out of 4', table_count;
   RAISE NOTICE '✅ Storage bucket: %', CASE WHEN bucket_exists THEN 'Created' ELSE 'Not found' END;
-  RAISE NOTICE '✅ Realtime tables: % out of 5', realtime_count;
+  RAISE NOTICE '✅ Realtime tables: % configured', realtime_count;
   RAISE NOTICE '';
   RAISE NOTICE '📱 Next Steps:';
-  RAISE NOTICE '   1. Enable realtime in Dashboard → Database → Replication';
-  RAISE NOTICE '   2. Test message sending in the app';
-  RAISE NOTICE '   3. Verify file uploads work';
-  RAISE NOTICE '   4. Create a test group chat';
+  RAISE NOTICE '   1. Go to Dashboard → Database → Replication';
+  RAISE NOTICE '   2. Enable realtime for: messages, typing_indicators,';
+  RAISE NOTICE '      message_reactions, groups, group_members';
+  RAISE NOTICE '   3. Test message sending in the app';
+  RAISE NOTICE '   4. Verify file uploads work';
+  RAISE NOTICE '   5. Create a test group chat';
   RAISE NOTICE '';
-  RAISE NOTICE '📚 See MIGRATION_DEPLOYMENT_GUIDE.md for detailed instructions';
+  RAISE NOTICE '📚 See MIGRATION_DEPLOYMENT_GUIDE.md for details';
   RAISE NOTICE '';
 END $$;
