@@ -42,6 +42,7 @@ import AttendanceManagement from "./pages/admin/AttendanceManagement";
 import CalendarManagement from "./pages/admin/CalendarManagement";
 import EventTripCreation from "./pages/admin/EventTripCreation";
 import EventRegistrations from "./pages/admin/EventRegistrations";
+import EventLogistics from "./pages/admin/EventLogistics";
 import ChangePassword from "./pages/ChangePassword";
 import DiagnosticPage from "./pages/DiagnosticPage";
 import { JainismChatbot } from "./components/ai/JainismChatbot";
@@ -186,6 +187,11 @@ const App = () => (
               <Route path="/admin/events/registrations" element={
                 <ProtectedRoute requireAdmin>
                   <EventRegistrations />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/events/logistics" element={
+                <ProtectedRoute requireAdmin>
+                  <EventLogistics />
                 </ProtectedRoute>
               } />
               <Route path="/admin/communications" element={
