@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
+import MobileLayout from '@/components/layout/MobileLayout';
 import { Card3D } from '@/components/3d/Card3D';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -175,71 +175,66 @@ const GalleryNew = () => {
 
   if (isLoading) {
     return (
-      <MainLayout title="Gallery">
-        <div className="flex items-center justify-center min-h-screen bg-black">
+      <MobileLayout title="Gallery">
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-zinc-950 via-black to-zinc-900">
           <Loading size="lg" text="Loading gallery..." />
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
   return (
-    <MainLayout title="Gallery">
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-black to-zinc-900">
-        {/* Header */}
-        <div className="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-40">
-          <div className="max-w-5xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-white">Gallery</h1>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Post
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-zinc-900 border-white/10">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Create New Post</DialogTitle>
-                    <DialogDescription className="text-white/60">
-                      Share a photo or video with the community
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-orange-500/50 transition-colors cursor-pointer">
-                      <Upload className="w-12 h-12 text-white/40 mx-auto mb-4" />
-                      <p className="text-white/60">Click to upload or drag and drop</p>
-                      <p className="text-white/40 text-sm mt-2">PNG, JPG, MP4 up to 50MB</p>
-                    </div>
-                    <Textarea
-                      placeholder="Write a caption..."
-                      className="bg-white/5 border-white/10 text-white rounded-xl"
-                    />
-                    <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl">
-                      Share Post
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+    <MobileLayout 
+      title="Gallery"
+      headerRight={
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="sm" className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 h-9">
+              <Plus className="w-4 h-4 mr-1" />
+              Post
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-white/10">
+            <DialogHeader>
+              <DialogTitle className="text-white">Create New Post</DialogTitle>
+              <DialogDescription className="text-white/60">
+                Share a photo or video with the community
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-orange-500/50 transition-colors cursor-pointer">
+                <Upload className="w-12 h-12 text-white/40 mx-auto mb-4" />
+                <p className="text-white/60">Click to upload or drag and drop</p>
+                <p className="text-white/40 text-sm mt-2">PNG, JPG, MP4 up to 50MB</p>
+              </div>
+              <Textarea
+                placeholder="Write a caption..."
+                className="bg-white/5 border-white/10 text-white rounded-xl"
+              />
+              <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl">
+                Share Post
+              </Button>
             </div>
-          </div>
-        </div>
-
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-black to-zinc-900">
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-5xl mx-auto px-4 py-6">
-          <TabsList className="bg-white/5 border border-white/10 rounded-xl p-1 mb-8">
-            <TabsTrigger value="feed" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 py-4">
+          <TabsList className="bg-white/5 border border-white/10 rounded-xl p-1 mb-6 w-full">
+            <TabsTrigger value="feed" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600">
               <Grid3x3 className="w-4 h-4 mr-2" />
               Feed
             </TabsTrigger>
-            <TabsTrigger value="reels" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600">
+            <TabsTrigger value="reels" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600">
               <PlaySquare className="w-4 h-4 mr-2" />
               Reels
             </TabsTrigger>
           </TabsList>
 
           {/* Feed Tab */}
-          <TabsContent value="feed" className="space-y-8">
+          <TabsContent value="feed" className="space-y-6">
             <AnimatePresence mode="wait">
               {posts?.map((post, index) => (
                 <motion.div
@@ -260,8 +255,8 @@ const GalleryNew = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-white font-semibold">{post.user_profiles?.full_name}</p>
-                          <p className="text-white/50 text-sm">{new Date(post.created_at).toLocaleDateString()}</p>
+                          <p className="text-white font-semibold text-sm">{post.user_profiles?.full_name}</p>
+                          <p className="text-white/50 text-xs">{new Date(post.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -269,13 +264,13 @@ const GalleryNew = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => followMutation.mutate(post.member_id)}
-                          className="text-orange-500 hover:text-orange-400 hover:bg-white/5"
+                          className="text-orange-500 hover:text-orange-400 hover:bg-white/5 h-8 text-xs"
                         >
-                          <UserPlus className="w-4 h-4 mr-1" />
+                          <UserPlus className="w-3 h-3 mr-1" />
                           Follow
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/5">
-                          <MoreHorizontal className="w-5 h-5" />
+                        <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/5 h-8 w-8">
+                          <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
@@ -290,7 +285,7 @@ const GalleryNew = () => {
                     </div>
 
                     {/* Post Actions */}
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <motion.button
@@ -305,14 +300,14 @@ const GalleryNew = () => {
                                   : 'text-white hover:text-white/80'
                               }`}
                             />
-                            <span className="text-white font-semibold">{post.likes_count || 0}</span>
+                            <span className="text-white font-semibold text-sm">{post.likes_count || 0}</span>
                           </motion.button>
                           <button
                             onClick={() => setSelectedPost(post)}
                             className="flex items-center gap-2 text-white hover:text-white/80"
                           >
                             <MessageCircle className="w-6 h-6" />
-                            <span className="font-semibold">{post.comments_count || 0}</span>
+                            <span className="font-semibold text-sm">{post.comments_count || 0}</span>
                           </button>
                           <button className="text-white hover:text-white/80">
                             <Send className="w-6 h-6" />
@@ -325,7 +320,7 @@ const GalleryNew = () => {
 
                       {/* Caption */}
                       {post.caption && (
-                        <p className="text-white">
+                        <p className="text-white text-sm">
                           <span className="font-semibold mr-2">{post.user_profiles?.full_name}</span>
                           {post.caption}
                         </p>
@@ -338,8 +333,8 @@ const GalleryNew = () => {
           </TabsContent>
 
           {/* Reels Tab */}
-          <TabsContent value="reels">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <TabsContent value="reels" className="pb-4">
+            <div className="grid grid-cols-2 gap-3">
               {reels?.map((reel) => (
                 <Card3D key={reel.id} className="aspect-[9/16] bg-white/5 border border-white/10 rounded-2xl overflow-hidden relative group cursor-pointer">
                   <img
@@ -348,21 +343,21 @@ const GalleryNew = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <p className="text-white text-sm font-semibold">{reel.user_profiles?.full_name}</p>
-                      <div className="flex items-center gap-4 mt-2 text-white/80 text-sm">
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <p className="text-white text-xs font-semibold">{reel.user_profiles?.full_name}</p>
+                      <div className="flex items-center gap-3 mt-1 text-white/80 text-xs">
                         <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
+                          <Heart className="w-3 h-3" />
                           {reel.likes_count}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" />
+                          <MessageCircle className="w-3 h-3" />
                           {reel.comments_count}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <PlaySquare className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-white/80" />
+                  <PlaySquare className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 text-white/80" />
                 </Card3D>
               ))}
             </div>
@@ -386,19 +381,19 @@ const GalleryNew = () => {
               <div className="flex flex-col h-full">
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar>
+                    <Avatar className="h-8 w-8">
                       <AvatarImage src={selectedPost?.user_profiles?.photo_url} />
                       <AvatarFallback>{selectedPost?.user_profiles?.full_name?.[0]}</AvatarFallback>
                     </Avatar>
-                    <span className="text-white font-semibold">{selectedPost?.user_profiles?.full_name}</span>
+                    <span className="text-white font-semibold text-sm">{selectedPost?.user_profiles?.full_name}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setSelectedPost(null)}
-                    className="text-white/60"
+                    className="text-white/60 h-8 w-8"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </Button>
                 </div>
 
@@ -406,11 +401,11 @@ const GalleryNew = () => {
                   {/* Caption */}
                   {selectedPost?.caption && (
                     <div className="flex gap-3">
-                      <Avatar className="w-8 h-8">
+                      <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={selectedPost?.user_profiles?.photo_url} />
                       </Avatar>
-                      <div>
-                        <p className="text-white">
+                      <div className="flex-1">
+                        <p className="text-white text-sm">
                           <span className="font-semibold mr-2">{selectedPost?.user_profiles?.full_name}</span>
                           {selectedPost?.caption}
                         </p>
@@ -429,12 +424,13 @@ const GalleryNew = () => {
                       placeholder="Add a comment..."
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white rounded-xl"
+                      className="bg-white/5 border-white/10 text-white rounded-xl text-sm"
                     />
                     <Button
                       onClick={() => commentMutation.mutate({ postId: selectedPost?.id, text: commentText })}
                       disabled={!commentText.trim()}
                       className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl"
+                      size="sm"
                     >
                       Post
                     </Button>
@@ -445,7 +441,7 @@ const GalleryNew = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
