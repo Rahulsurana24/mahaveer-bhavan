@@ -30,7 +30,13 @@ import {
   EyeOff,
   Save,
   Edit2,
-  CheckCircle
+  CheckCircle,
+  LogOut,
+  Home,
+  Plane,
+  Image as ImageIcon,
+  MessageCircle,
+  UserCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +49,7 @@ import { motion } from "framer-motion";
 const Profile = () => {
   const { member, loading, error } = useMemberData();
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState<any>({});
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -236,6 +243,34 @@ const Profile = () => {
     }
   });
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been securely logged out",
+      });
+      
+      navigate('/auth/login');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to logout",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSwitchAccount = () => {
+    toast({
+      title: "Switch Account",
+      description: "Please logout and sign in with a different account",
+    });
+    navigate('/auth/login');
+  };
+
   const getInitials = (name: string) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
   };
@@ -262,7 +297,7 @@ const Profile = () => {
 
   return (
     <MobileLayout title="Profile">
-      <div className="min-h-screen bg-[#1C1C1C] pb-6">
+      <div className="min-h-screen bg-[#1C1C1C] pb-24">
         {/* Profile Header with Large Image */}
         <div className="bg-gradient-to-b from-[#252525] to-[#1C1C1C] px-6 py-8 border-b border-white/10">
           <motion.div
@@ -724,6 +759,114 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Account Actions */}
+          <Card className="bg-gradient-to-br from-[#252525] to-[#1C1C1C] border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <UserCircle className="h-5 w-5 text-[#B8860B]" />
+                Account Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                onClick={handleSwitchAccount}
+                variant="outline"
+                className="w-full justify-start bg-white/5 border-white/10 text-white hover:bg-white/10"
+              >
+                <User className="h-5 w-5 mr-2" />
+                Switch Account
+              </Button>
+              
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="w-full justify-start bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Logout
+              </Button>
+              
+              <p className="text-xs text-gray-500 text-center pt-2">
+                Version 1.0.0 • Logged in as {member.email}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Persistent Navigation Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#1C1C1C]/95 backdrop-blur-lg border-t border-white/10 z-50">
+        <div className="flex items-center justify-around py-2">
+          {/* Home */}
+          <button
+            onClick={() => {
+              setActiveTab('home');
+              navigate('/member/dashboard');
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
+          >
+            <Home className={`h-6 w-6 ${activeTab === 'home' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
+            <span className={`text-xs ${activeTab === 'home' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
+              Home
+            </span>
+          </button>
+
+          {/* Events */}
+          <button
+            onClick={() => {
+              setActiveTab('events');
+              navigate('/events');
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
+          >
+            <Calendar className={`h-6 w-6 ${activeTab === 'events' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
+            <span className={`text-xs ${activeTab === 'events' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
+              Events
+            </span>
+          </button>
+
+          {/* Trips */}
+          <button
+            onClick={() => {
+              setActiveTab('trips');
+              navigate('/trips');
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
+          >
+            <Plane className={`h-6 w-6 ${activeTab === 'trips' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
+            <span className={`text-xs ${activeTab === 'trips' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
+              Trips
+            </span>
+          </button>
+
+          {/* Gallery */}
+          <button
+            onClick={() => {
+              setActiveTab('gallery');
+              navigate('/gallery');
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
+          >
+            <ImageIcon className={`h-6 w-6 ${activeTab === 'gallery' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
+            <span className={`text-xs ${activeTab === 'gallery' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
+              Gallery
+            </span>
+          </button>
+
+          {/* Profile */}
+          <button
+            onClick={() => {
+              setActiveTab('profile');
+              navigate('/profile');
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
+          >
+            <User className={`h-6 w-6 ${activeTab === 'profile' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
+            <span className={`text-xs ${activeTab === 'profile' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
+              Profile
+            </span>
+          </button>
         </div>
       </div>
     </MobileLayout>
