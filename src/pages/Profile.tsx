@@ -164,257 +164,285 @@ const Profile = () => {
 
   return (
     <MainLayout title="Profile">
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-black to-zinc-900 px-4 py-6 space-y-6">
         {/* Profile Header */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-start gap-6">
-              <div className="relative">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={member.photo_url} alt={member.full_name} />
-                  <AvatarFallback className="text-lg">
-                    {member.full_name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute -bottom-2 -right-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="h-8 w-8 rounded-full cursor-pointer"
-                    asChild
-                    disabled={uploading}
-                  >
-                    <span>
-                      {uploading ? <Upload className="h-4 w-4 animate-pulse" /> : <Camera className="h-4 w-4" />}
-                    </span>
-                  </Button>
-                </label>
-              </div>
-              
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                  <div>
-                    <h1 className="text-2xl font-bold">{member.full_name}</h1>
-                    <p className="text-muted-foreground">{member.email}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="font-mono">{member.id}</Badge>
-                      {getMembershipBadge(member.membership_type)}
-                      <Badge variant={member.status === 'active' ? "default" : "secondary"}>
-                        {member.status}
-                      </Badge>
+        <Card3D intensity={8}>
+          <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-600 rounded-full blur-2xl opacity-40"></div>
+                  <Avatar className="relative h-24 w-24 border-4 border-orange-500 shadow-xl shadow-orange-500/30">
+                    <AvatarImage src={member.photo_url} alt={member.full_name} />
+                    <AvatarFallback className="text-lg bg-gradient-to-br from-orange-500 to-red-600 text-white font-bold">
+                      {member.full_name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <label className="absolute -bottom-2 -right-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 cursor-pointer shadow-lg"
+                      asChild
+                      disabled={uploading}
+                    >
+                      <span>
+                        {uploading ? <Upload className="h-4 w-4 animate-pulse" /> : <Camera className="h-4 w-4" />}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                    <div>
+                      <h1 className="text-3xl font-bold text-white">{member.full_name}</h1>
+                      <p className="text-white/60 mt-1">{member.email}</p>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <Badge variant="outline" className="font-mono bg-white/5 border-white/20 text-white">
+                          {member.id?.slice(0, 8)}
+                        </Badge>
+                        <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white border-0">
+                          {member.membership_type}
+                        </Badge>
+                        <Badge className={member.status === 'active' ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-white/5 border-white/20 text-white/60"}>
+                          {member.status}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4 md:mt-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/id-card')}
+                        className="bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl"
+                      >
+                        <QrCode className="h-4 w-4 mr-2" />
+                        ID Card
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSaveChanges();
+                          } else {
+                            setIsEditing(true);
+                          }
+                        }}
+                        className={isEditing
+                          ? "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl"
+                          : "bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl"}
+                      >
+                        {isEditing ? (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save
+                          </>
+                        ) : (
+                          <>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex gap-2 mt-4 md:mt-0">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate('/id-card')}
-                    >
-                      <QrCode className="h-4 w-4 mr-2" />
-                      ID Card
-                    </Button>
-                    <Button 
-                      variant={isEditing ? "default" : "outline"} 
-                      size="sm"
-                      onClick={() => {
-                        if (isEditing) {
-                          handleSaveChanges();
-                        } else {
-                          setIsEditing(true);
-                        }
-                      }}
-                    >
-                      {isEditing ? (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save
-                        </>
-                      ) : (
-                        <>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{member.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Member since {new Date(member.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="line-clamp-1">{member.address || 'No address provided'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{member.gender || 'Not specified'}</span>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-white/80">
+                      <Phone className="h-4 w-4 text-orange-500" />
+                      <span>{member.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <Calendar className="h-4 w-4 text-orange-500" />
+                      <span>Member since {new Date(member.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <MapPin className="h-4 w-4 text-orange-500" />
+                      <span className="line-clamp-1">{member.address || 'No address provided'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/80">
+                      <User className="h-4 w-4 text-orange-500" />
+                      <span>{member.gender || 'Not specified'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Card3D>
 
         <Tabs defaultValue="personal" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="personal">Personal Info</TabsTrigger>
-            <TabsTrigger value="emergency">Emergency Contact</TabsTrigger>
+          <TabsList className="bg-white/5 border border-white/10 rounded-xl p-1">
+            <TabsTrigger value="personal" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white text-white/60">
+              Personal Info
+            </TabsTrigger>
+            <TabsTrigger value="emergency" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white text-white/60">
+              Emergency Contact
+            </TabsTrigger>
           </TabsList>
 
           {/* Personal Information */}
           <TabsContent value="personal" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card3D intensity={8}>
+              <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <User className="h-5 w-5 text-orange-500" />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="full-name" className="text-white/80">Full Name</Label>
+                      <Input
+                        id="full-name"
+                        value={formData.full_name || ''}
+                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-white/80">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-white/80">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone || ''}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="membership" className="text-white/80">Membership Type</Label>
+                      <Input
+                        id="membership"
+                        value={member.membership_type}
+                        disabled
+                        className="bg-white/5 border-white/10 text-white rounded-xl opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city" className="text-white/80">City</Label>
+                      <Input
+                        id="city"
+                        value={formData.city || ''}
+                        onChange={(e) => setFormData({...formData, city: e.target.value})}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state" className="text-white/80">State</Label>
+                      <Input
+                        id="state"
+                        value={formData.state || ''}
+                        onChange={(e) => setFormData({...formData, state: e.target.value})}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postal-code" className="text-white/80">Postal Code</Label>
+                      <Input
+                        id="postal-code"
+                        value={formData.postal_code || ''}
+                        onChange={(e) => setFormData({...formData, postal_code: e.target.value})}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="full-name">Full Name</Label>
-                    <Input 
-                      id="full-name" 
-                      value={formData.full_name || ''}
-                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                    <Label htmlFor="address" className="text-white/80">Full Address</Label>
+                    <Textarea
+                      id="address"
+                      value={formData.address || ''}
+                      onChange={(e) => setFormData({...formData, address: e.target.value})}
                       disabled={!isEditing}
+                      rows={3}
+                      className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      value={formData.email || ''}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input 
-                      id="phone" 
-                      type="tel"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="membership">Membership Type</Label>
-                    <Input 
-                      id="membership" 
-                      value={member.membership_type}
-                      disabled
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input 
-                      id="city" 
-                      value={formData.city || ''}
-                      onChange={(e) => setFormData({...formData, city: e.target.value})}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input 
-                      id="state" 
-                      value={formData.state || ''}
-                      onChange={(e) => setFormData({...formData, state: e.target.value})}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="postal-code">Postal Code</Label>
-                    <Input 
-                      id="postal-code" 
-                      value={formData.postal_code || ''}
-                      onChange={(e) => setFormData({...formData, postal_code: e.target.value})}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="address">Full Address</Label>
-                  <Textarea 
-                    id="address"
-                    value={formData.address || ''}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    disabled={!isEditing}
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Card3D>
           </TabsContent>
 
           {/* Emergency Contact */}
           <TabsContent value="emergency" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Emergency Contact</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-name">Contact Name</Label>
-                    <Input 
-                      id="emergency-name"
-                      value={formData.emergency_contact?.name || ''}
-                      onChange={(e) => setFormData({
-                        ...formData, 
-                        emergency_contact: {...formData.emergency_contact, name: e.target.value}
-                      })}
-                      disabled={!isEditing}
-                    />
+            <Card3D intensity={8}>
+              <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
+                <CardHeader>
+                  <CardTitle className="text-white">Emergency Contact</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-name" className="text-white/80">Contact Name</Label>
+                      <Input
+                        id="emergency-name"
+                        value={formData.emergency_contact?.name || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          emergency_contact: {...formData.emergency_contact, name: e.target.value}
+                        })}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-relationship" className="text-white/80">Relationship</Label>
+                      <Input
+                        id="emergency-relationship"
+                        value={formData.emergency_contact?.relationship || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          emergency_contact: {...formData.emergency_contact, relationship: e.target.value}
+                        })}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-phone" className="text-white/80">Phone Number</Label>
+                      <Input
+                        id="emergency-phone"
+                        type="tel"
+                        value={formData.emergency_contact?.phone || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          emergency_contact: {...formData.emergency_contact, phone: e.target.value}
+                        })}
+                        disabled={!isEditing}
+                        className="bg-white/5 border-white/10 text-white rounded-xl disabled:opacity-50"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-relationship">Relationship</Label>
-                    <Input 
-                      id="emergency-relationship"
-                      value={formData.emergency_contact?.relationship || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        emergency_contact: {...formData.emergency_contact, relationship: e.target.value}
-                      })}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-phone">Phone Number</Label>
-                    <Input 
-                      id="emergency-phone"
-                      type="tel"
-                      value={formData.emergency_contact?.phone || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        emergency_contact: {...formData.emergency_contact, phone: e.target.value}
-                      })}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Card3D>
           </TabsContent>
         </Tabs>
       </div>
