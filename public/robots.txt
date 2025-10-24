@@ -1,14 +1,11 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# Mahaveer Bhavan - Robots Configuration
 
 User-agent: *
 Allow: /
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Disallow admin paths
+Disallow: /admin/
+Disallow: /api/
