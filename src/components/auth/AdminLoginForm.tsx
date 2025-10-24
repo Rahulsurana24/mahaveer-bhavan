@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 
 const adminLoginSchema = z.object({
   email: z.string().email('Please enter a valid admin email address'),
@@ -45,7 +46,40 @@ export const AdminLoginForm = () => {
         return;
       }
 
-      // Success handled by auth context redirect
+      // Verify user has admin role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('role_id, user_roles(name)')
+          .eq('auth_id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          await signIn(data.email, data.password); // Sign out
+          toast({
+            title: 'Access Denied',
+            description: 'Unable to verify admin credentials.',
+            variant: 'destructive'
+          });
+          return;
+        }
+
+        const roleName = (profile as any)?.user_roles?.name;
+        
+        // Check if user is admin
+        if (!['admin', 'superadmin', 'management_admin', 'view_only_admin'].includes(roleName)) {
+          await supabase.auth.signOut(); // Sign out non-admin users
+          toast({
+            title: 'Access Denied',
+            description: 'This login is for administrators only. Please use the Member Login.',
+            variant: 'destructive'
+          });
+          return;
+        }
+      }
+
+      // Success - redirect will be handled by AdminAuth component
     } catch (error: any) {
       toast({
         title: 'Admin Login Failed',
