@@ -38,15 +38,37 @@ export const useMemberData = () => {
         setLoading(true);
         setError(null);
 
-        const { data, error: fetchError } = await supabase
-          .from('members')
-          .select('*')
+        // Try user_profiles first (this is what gets created by auth trigger)
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*, user_roles(name)')
           .eq('auth_id', user.id)
           .maybeSingle();
 
-        if (fetchError) throw fetchError;
+        if (profileError) throw profileError;
 
-        setMember(data);
+        if (profileData) {
+          // Transform user_profiles data to MemberData format
+          setMember({
+            id: profileData.id,
+            full_name: profileData.full_name || user.email || '',
+            email: profileData.email || user.email || '',
+            phone: profileData.phone || '',
+            membership_type: (profileData as any).user_roles?.name || 'member',
+            photo_url: profileData.photo_url || '',
+            qr_code: profileData.qr_code || null,
+            status: profileData.is_active ? 'active' : 'inactive',
+            created_at: profileData.created_at,
+            address: profileData.address || null,
+            city: profileData.city || null,
+            state: profileData.state || null,
+            postal_code: profileData.postal_code || null,
+            gender: profileData.gender || null,
+            emergency_contact: profileData.emergency_contact || null
+          } as MemberData);
+        } else {
+          setError('Profile not found');
+        }
       } catch (err: any) {
         console.error('Error fetching member data:', err);
         setError(err.message);
