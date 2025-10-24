@@ -60,75 +60,51 @@ export const JainismChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Get OpenRouter API key from Supabase secrets or environment variable
-      let apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+      // Call Supabase Edge Function (API key is securely stored in Edge Function secrets)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      // Try to get from Supabase vault if available
-      try {
-        const { data: secrets, error } = await supabase
-          .from('vault')
-          .select('secret')
-          .eq('name', 'OPENROUTER_API_KEY')
-          .single();
-
-        if (!error && secrets?.secret) {
-          apiKey = secrets.secret;
-        }
-      } catch (vaultError) {
-        // Vault not configured, use environment variable
-        console.log('Using environment variable for API key');
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase configuration is missing. Please check environment variables.');
       }
 
-      if (!apiKey) {
-        throw new Error('OpenRouter API key not configured. Please set VITE_OPENROUTER_API_KEY in environment variables.');
-      }
+      // Prepare messages for the Edge Function
+      const messagesToSend = messages.slice(-5).map(m => ({
+        role: m.role,
+        content: m.content
+      }));
 
-      // Prepare context about Jainism and Varatisap
-      const systemPrompt = `You are a knowledgeable guide on Jainism and Varatisap (Jain community traditions).
+      // Add current user message
+      messagesToSend.push({
+        role: 'user',
+        content: inputValue
+      });
 
-Key topics you can help with:
-- Jain philosophy and principles (Ahimsa, Anekantavada, Aparigraha)
-- Jain practices (meditation, fasting, prayer)
-- Varatisap community traditions
-- Jain festivals and celebrations
-- Jain dietary practices
-- Spiritual guidance
-- Community involvement
-
-Respond in ${language === 'hi' ? 'Hindi (Devanagari script)' : 'English'}.
-Be respectful, informative, and encourage spiritual growth.
-Keep responses concise (2-3 paragraphs max).`;
-
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      // Call the Edge Function
+      const response = await fetch(`${supabaseUrl}/functions/v1/jainism-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Mahaveer Bhavan AI Guide'
+          'Authorization': `Bearer ${supabaseAnonKey}`
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-3.1-8b-instruct:free',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages.slice(-5).map(m => ({
-              role: m.role,
-              content: m.content
-            })),
-            { role: 'user', content: inputValue }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
+          messages: messagesToSend,
+          language: language
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Failed to get AI response');
+        throw new Error(errorData.error || 'Failed to get AI response');
       }
 
       const data = await response.json();
-      const aiResponse = data.choices[0]?.message?.content || 'I apologize, I could not generate a response. Please try again.';
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get AI response');
+      }
+
+      const aiResponse = data.response || 'I apologize, I could not generate a response. Please try again.';
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
