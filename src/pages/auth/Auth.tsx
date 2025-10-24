@@ -5,6 +5,7 @@ import { AuthLayout } from '@/components/layout/auth-layout';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { LanguageSelectionDialog } from '@/components/dialogs/LanguageSelectionDialog';
 import { supabase } from '@/integrations/supabase/client';
 
 type AuthMode = 'login' | 'signup' | 'forgot-password';
@@ -14,6 +15,7 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [checkingRole, setCheckingRole] = useState(false);
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -29,6 +31,12 @@ const Auth = () => {
           if (!error && data) {
             const role = (data as any)?.user_roles?.name;
             setUserRole(role);
+            
+            // Check if language selection dialog should be shown
+            const languageSelected = localStorage.getItem('language_selected');
+            if (!languageSelected) {
+              setShowLanguageDialog(true);
+            }
           }
         } catch (error) {
           console.error('Error fetching user role:', error);
@@ -48,6 +56,23 @@ const Auth = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </AuthLayout>
+    );
+  }
+
+  // Show language dialog before redirecting
+  if (user && showLanguageDialog) {
+    return (
+      <>
+        <AuthLayout title="Welcome">
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </AuthLayout>
+        <LanguageSelectionDialog 
+          open={showLanguageDialog} 
+          onClose={() => setShowLanguageDialog(false)} 
+        />
+      </>
     );
   }
 
