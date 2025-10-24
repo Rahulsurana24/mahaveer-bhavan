@@ -46,7 +46,6 @@ export const AdminLoginForm = () => {
         return;
       }
 
-      // Verify user has admin role
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile, error: profileError } = await supabase
@@ -56,7 +55,7 @@ export const AdminLoginForm = () => {
           .single();
 
         if (profileError || !profile) {
-          await signIn(data.email, data.password); // Sign out
+          await supabase.auth.signOut();
           toast({
             title: 'Access Denied',
             description: 'Unable to verify admin credentials.',
@@ -67,9 +66,8 @@ export const AdminLoginForm = () => {
 
         const roleName = (profile as any)?.user_roles?.name;
         
-        // Check if user is admin
         if (!['admin', 'superadmin', 'management_admin', 'view_only_admin'].includes(roleName)) {
-          await supabase.auth.signOut(); // Sign out non-admin users
+          await supabase.auth.signOut();
           toast({
             title: 'Access Denied',
             description: 'This login is for administrators only. Please use the Member Login.',
@@ -79,7 +77,10 @@ export const AdminLoginForm = () => {
         }
       }
 
-      // Success - redirect will be handled by AdminAuth component
+      toast({
+        title: 'Welcome Admin',
+        description: 'Successfully authenticated.'
+      });
     } catch (error: any) {
       toast({
         title: 'Admin Login Failed',
