@@ -39,14 +39,7 @@ const Messages = () => {
     queryFn: async () => {
       let query = supabase
         .from('user_profiles')
-        .select(`
-          id,
-          auth_id,
-          email,
-          full_name,
-          avatar_url,
-          user_roles(name)
-        `)
+        .select('id, auth_id, email, full_name, avatar_url')
         .neq('id', currentUser?.id || '');
 
       if (searchTerm) {
@@ -54,8 +47,11 @@ const Messages = () => {
       }
 
       const { data, error } = await query.order('full_name');
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+      return data || [];
     },
     enabled: !!currentUser
   });
@@ -234,7 +230,7 @@ const Messages = () => {
                     {user.full_name}
                   </h3>
                   <p className="text-xs text-gray-500 truncate">
-                    {user.user_roles?.name || 'Member'}
+                    {user.email}
                   </p>
                 </div>
               </button>
