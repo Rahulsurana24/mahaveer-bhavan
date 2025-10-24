@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/main-layout";
-import { Card } from "@/components/ui/card";
+import MobileLayout from "@/components/layout/MobileLayout";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -19,7 +18,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Play
+  Play,
+  Image as ImageIcon
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,38 +93,41 @@ const Gallery = () => {
 
   if (isLoading) {
     return (
-      <MainLayout title="Gallery">
+      <MobileLayout title="Gallery">
         <div className="flex justify-center py-12">
-          <Loading size="lg" text="Loading gallery..." />
+          <Loading size="lg" />
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
   return (
-    <MainLayout title="Gallery">
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        {/* Instagram-style Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Gallery</h1>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <MobileLayout title="Gallery">
+      <div className="space-y-4">
+        {/* Mobile Search Bar */}
+        <div className="sticky top-0 z-10 bg-white px-4 py-3 border-b">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search..."
+              placeholder="Search gallery..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-10 bg-gray-50 border-none focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
         </div>
 
         {/* Instagram-style Grid */}
         {!mediaItems || mediaItems.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">No posts yet</p>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <ImageIcon className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No photos yet</h3>
+            <p className="text-sm text-gray-500 text-center">
+              {searchTerm ? "No results found" : "Gallery photos will appear here"}
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1 md:gap-2">
+          <div className="grid grid-cols-3 gap-1">
             {mediaItems.map((item: any, index: number) => (
               <div
                 key={item.id}
@@ -169,8 +172,8 @@ const Gallery = () => {
         {/* Instagram-style Modal */}
         <Dialog open={selectedMediaIndex !== null} onOpenChange={() => setSelectedMediaIndex(null)}>
           <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0">
-            <div className="flex h-full">
-              {/* Left: Media Display */}
+            <div className="flex h-full flex-col md:flex-row">
+              {/* Media Display */}
               <div className="flex-1 bg-black flex items-center justify-center relative">
                 <Button
                   variant="ghost"
@@ -220,8 +223,8 @@ const Gallery = () => {
                 )}
               </div>
 
-              {/* Right: Instagram-style Info Panel */}
-              <div className="w-full md:w-96 bg-background flex flex-col">
+              {/* Info Panel */}
+              <div className="w-full md:w-96 bg-background flex flex-col max-h-[40vh] md:max-h-full">
                 {/* Header */}
                 <div className="p-4 border-b flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -243,7 +246,7 @@ const Gallery = () => {
                   </Button>
                 </div>
 
-                {/* Description/Caption */}
+                {/* Description */}
                 <div className="flex-1 p-4 overflow-y-auto">
                   {selectedMedia && (
                     <div className="space-y-4">
@@ -264,11 +267,6 @@ const Gallery = () => {
                             })}
                           </p>
                         </div>
-                      </div>
-
-                      {/* Comments Section */}
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        No comments yet
                       </div>
                     </div>
                   )}
@@ -317,24 +315,13 @@ const Gallery = () => {
                       {Math.floor(Math.random() * 100)} likes
                     </div>
                   </div>
-
-                  {/* Add Comment */}
-                  <div className="p-4 border-t flex items-center gap-2">
-                    <Input
-                      placeholder="Add a comment..."
-                      className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                    <Button variant="ghost" className="text-primary font-semibold">
-                      Post
-                    </Button>
-                  </div>
                 </div>
               </div>
             </div>
           </DialogContent>
         </Dialog>
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
