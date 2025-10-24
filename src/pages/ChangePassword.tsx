@@ -42,20 +42,31 @@ const ChangePassword = () => {
 
       if (updateError) throw updateError;
 
-      // Update needs_password_change flag
+      // Update needs_password_change flag in user_profiles
       const { error: profileError } = await supabase
         .from('user_profiles')
         .update({ needs_password_change: false })
         .eq('auth_id', user?.id);
 
-      if (profileError) throw profileError;
+      if (profileError) console.error('Profile update error:', profileError);
+
+      // Update is_first_login flag in members table
+      const { error: memberError } = await supabase
+        .from('members')
+        .update({ 
+          is_first_login: false,
+          password_changed_at: new Date().toISOString()
+        })
+        .eq('auth_id', user?.id);
+
+      if (memberError) console.error('Member update error:', memberError);
 
       toast({
         title: 'Password Updated',
         description: 'Your password has been changed successfully.'
       });
 
-      navigate('/dashboard');
+      navigate('/member/dashboard');
     } catch (error: any) {
       toast({
         title: 'Update Failed',
