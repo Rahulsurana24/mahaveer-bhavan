@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
 import AdminAuth from "./pages/auth/AdminAuth";
+import ResetPassword from "./pages/auth/ResetPassword";
 import Events from "./pages/Events";
 import Messaging from "./pages/Messaging";
 import MessagingEnhanced from "./pages/MessagingEnhanced";
@@ -58,6 +59,7 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin/auth" element={<AdminAuth />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               
               {/* Password Change Route */}
               <Route path="/change-password" element={
