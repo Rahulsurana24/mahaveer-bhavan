@@ -14,6 +14,13 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import ResetPassword from "./pages/auth/ResetPassword";
+import Welcome from "./pages/auth/Welcome";
+import MemberRegistration from "./pages/auth/MemberRegistration";
+import MemberLogin from "./pages/auth/MemberLogin";
+import PasswordManagement from "./pages/auth/PasswordManagement";
+import RegistrationSuccess from "./pages/auth/RegistrationSuccess";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import MemberDashboard from "./pages/dashboard/MemberDashboard";
 import Events from "./pages/Events";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
@@ -61,15 +68,35 @@ const App = () => (
               {/* Public Landing Page - Accessible to Everyone */}
               <Route path="/" element={<Landing />} />
               
-              {/* Public Routes */}
+              {/* Public Authentication Routes - Mobile Optimized */}
+              <Route path="/auth/welcome" element={<Welcome />} />
+              <Route path="/auth/register" element={<MemberRegistration />} />
+              <Route path="/auth/login" element={<MemberLogin />} />
+              <Route path="/auth/password-management" element={<PasswordManagement />} />
+              <Route path="/auth/registration-success" element={<RegistrationSuccess />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              
+              {/* Legacy Public Routes */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin/auth" element={<AdminAuth />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
               
-              {/* Password Change Route */}
+              {/* Password Change Routes */}
               <Route path="/change-password" element={
                 <ProtectedRoute>
                   <ChangePassword />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/change-password" element={
+                <ProtectedRoute requireAdmin>
+                  <ChangePassword />
+                </ProtectedRoute>
+              } />
+              
+              {/* Protected Member Dashboard - Mobile Optimized */}
+              <Route path="/member/dashboard" element={
+                <ProtectedRoute>
+                  <MemberDashboard />
                 </ProtectedRoute>
               } />
               
