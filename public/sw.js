@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahaveer-bhavan-v1';
+const CACHE_NAME = 'mahaveer-bhavan-v2-routing-fix';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
