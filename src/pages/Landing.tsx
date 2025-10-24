@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Users, Calendar, Image, MessageSquare, Award, Shield } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ const Landing = () => {
             <span className="text-2xl font-semibold tracking-tight">Mahaveer Bhavan</span>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <Button 
               variant="ghost" 
               onClick={() => navigate('/auth')}
