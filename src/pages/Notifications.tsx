@@ -1,18 +1,8 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/main-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import MobileLayout from "@/components/layout/MobileLayout";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Bell, 
   Calendar, 
@@ -22,20 +12,19 @@ import {
   Settings,
   Check,
   Trash2,
-  Filter,
   Clock,
-  AlertCircle,
-  Info,
-  CheckCircle
+  Info
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { Loading } from "@/components/ui/loading";
+import { cn } from "@/lib/utils";
 
 const Notifications = () => {
-  const [filter, setFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -74,7 +63,6 @@ const Notifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast({ title: "Notification marked as read" });
     }
   });
 
@@ -86,7 +74,7 @@ const Notifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast({ title: "All notifications marked as read" });
+      toast({ title: "All marked as read" });
     }
   });
 
@@ -127,308 +115,146 @@ const Notifications = () => {
     return Icon;
   };
 
-  const getNotificationColor = (type: string, priority: string) => {
-    if (priority === "high") return "text-red-500";
-    if (priority === "medium") return "text-yellow-500";
-    return "text-blue-500";
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      "high": "destructive",
-      "medium": "secondary",
-      "low": "outline"
-    };
-    return <Badge variant={variants[priority] || "outline"}>{priority}</Badge>;
-  };
-
-  const filteredNotifications = filter === "all" 
+  const filteredNotifications = activeTab === "all" 
     ? notifications 
-    : notifications.filter(notif => notif.type === filter);
+    : activeTab === "unread"
+    ? notifications.filter(n => !n.is_read)
+    : notifications.filter(notif => notif.type === activeTab);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  return (
-    <MainLayout title="Notifications">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground">
-              Stay updated with latest announcements and activities
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => markAllAsReadMutation.mutate()}
-              disabled={markAllAsReadMutation.isPending || unreadCount === 0}
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Mark All Read
-            </Button>
-            <Button variant="outline" size="sm">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All
-            </Button>
-          </div>
+  if (isLoading) {
+    return (
+      <MobileLayout title="Notifications">
+        <div className="flex justify-center py-12">
+          <Loading size="lg" />
         </div>
+      </MobileLayout>
+    );
+  }
 
-        <Tabs defaultValue="notifications" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="notifications" className="relative">
-              Notifications
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 min-w-5 text-xs">
-                  {unreadCount}
+  return (
+    <MobileLayout 
+      title="Notifications"
+      headerRight={
+        unreadCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => markAllAsReadMutation.mutate()}
+            disabled={markAllAsReadMutation.isPending}
+            className="h-9 text-xs"
+          >
+            <Check className="h-4 w-4 mr-1" />
+            Mark All
+          </Button>
+        )
+      }
+    >
+      <div className="space-y-4">
+        {/* Pill Tabs */}
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide border-b">
+          {[
+            { value: "all", label: "All" },
+            { value: "unread", label: "Unread", badge: unreadCount },
+            { value: "announcement", label: "Announcements" },
+            { value: "event", label: "Events" }
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2",
+                activeTab === tab.value
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
+            >
+              {tab.label}
+              {tab.badge && tab.badge > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
+                  {tab.badge}
                 </Badge>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+            </button>
+          ))}
+        </div>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            {/* Filters */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    <Label>Filter by category:</Label>
-                  </div>
-                  <Select value={filter} onValueChange={setFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="info">Info</SelectItem>
-                      <SelectItem value="success">Success</SelectItem>
-                      <SelectItem value="warning">Warning</SelectItem>
-                      <SelectItem value="error">Error</SelectItem>
-                      <SelectItem value="announcement">Announcement</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notifications List */}
-            <div className="space-y-3">
-              {isLoading ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-muted-foreground mt-4">Loading notifications...</p>
-                  </CardContent>
-                </Card>
-              ) : filteredNotifications.length > 0 ? (
-                filteredNotifications.map((notification: any) => {
-                  const Icon = getNotificationIcon(notification.type);
-                  return (
-                    <Card 
-                      key={notification.id} 
-                      className={`cursor-pointer transition-colors ${
-                        !notification.is_read 
-                          ? "border-l-4 border-l-primary bg-primary/5" 
-                          : "hover:bg-muted/50"
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <div className={`p-2 rounded-full bg-muted ${getNotificationColor(notification.type, 'medium')}`}>
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className={`font-medium ${!notification.is_read ? 'font-semibold' : ''}`}>
-                                    {notification.title}
-                                  </h3>
-                                  {!notification.is_read && (
-                                    <div className="w-2 h-2 bg-primary rounded-full" />
-                                  )}
-                                  <Badge variant={notification.type === 'error' ? 'destructive' : 'secondary'}>
-                                    {notification.type}
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  {notification.message}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{format(new Date(notification.created_at), 'MMM d, h:mm a')}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
+        {/* Notifications List */}
+        <div className="px-4 space-y-2 pb-4">
+          {filteredNotifications.length > 0 ? (
+            filteredNotifications.map((notification: any) => {
+              const Icon = getNotificationIcon(notification.type);
+              return (
+                <Card 
+                  key={notification.id} 
+                  className={cn(
+                    "cursor-pointer transition-colors overflow-hidden",
+                    !notification.is_read && "border-l-4 border-l-primary bg-primary/5"
+                  )}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-full bg-primary/10 flex-shrink-0">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2">
+                            <h3 className={cn(
+                              "text-sm font-medium line-clamp-1",
+                              !notification.is_read && "font-semibold"
+                            )}>
+                              {notification.title}
+                            </h3>
                             {!notification.is_read && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  markAsReadMutation.mutate(notification.id);
-                                }}
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
+                              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                             )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNotificationMutation.mutate(notification.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotificationMutation.mutate(notification.id);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              ) : (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <Bell className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No notifications</h3>
-                    <p className="text-muted-foreground">
-                      {filter === "all" 
-                        ? "You're all caught up! No new notifications to show."
-                        : `No notifications of type ${filter}.`
-                      }
-                    </p>
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                          {notification.message}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Clock className="h-3 w-3" />
+                          <span>{format(new Date(notification.created_at), 'MMM d, h:mm a')}</span>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
-              )}
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <Bell className="h-16 w-16 text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications</h3>
+              <p className="text-sm text-gray-500 text-center">
+                {activeTab === "all" 
+                  ? "You're all caught up!"
+                  : activeTab === "unread"
+                  ? "No unread notifications"
+                  : `No ${activeTab} notifications`
+                }
+              </p>
             </div>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Push Notifications */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Push Notifications</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Enable Push Notifications</Label>
-                        <p className="text-sm text-muted-foreground">Receive notifications even when the app is closed</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Email Notifications */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Email Notifications</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Event Reminders</Label>
-                        <p className="text-sm text-muted-foreground">Get email reminders for upcoming events</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Donation Receipts</Label>
-                        <p className="text-sm text-muted-foreground">Receive donation receipts via email</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Weekly Newsletter</Label>
-                        <p className="text-sm text-muted-foreground">Get weekly updates about trust activities</p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                {/* WhatsApp Notifications */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">WhatsApp Notifications</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Important Announcements</Label>
-                        <p className="text-sm text-muted-foreground">Receive critical updates via WhatsApp</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Event Updates</Label>
-                        <p className="text-sm text-muted-foreground">Get event-related updates on WhatsApp</p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Frequency Settings */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Notification Frequency</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Digest Frequency</Label>
-                      <Select defaultValue="daily">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="immediate">Immediate</SelectItem>
-                          <SelectItem value="daily">Daily Digest</SelectItem>
-                          <SelectItem value="weekly">Weekly Digest</SelectItem>
-                          <SelectItem value="never">Never</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Quiet Hours</Label>
-                      <Select defaultValue="none">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No Quiet Hours</SelectItem>
-                          <SelectItem value="night">10 PM - 8 AM</SelectItem>
-                          <SelectItem value="custom">Custom Hours</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <Button>Save Preferences</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
