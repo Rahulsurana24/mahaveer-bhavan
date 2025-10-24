@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import ResetPassword from "./pages/auth/ResetPassword";
+import EmailConfirmation from "./pages/auth/EmailConfirmation";
 import Welcome from "./pages/auth/Welcome";
 import MemberRegistration from "./pages/auth/MemberRegistration";
 import MemberLogin from "./pages/auth/MemberLogin";
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin/auth" element={<AdminAuth />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/confirm" element={<EmailConfirmation />} />
               
               {/* Password Change Routes */}
               <Route path="/change-password" element={
