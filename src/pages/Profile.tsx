@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import { Card3D } from "@/components/3d/Card3D";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
   Calendar,
   Camera,
   QrCode,
