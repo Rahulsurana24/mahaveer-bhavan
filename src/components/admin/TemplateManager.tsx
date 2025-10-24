@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -30,7 +32,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { FileText, Plus, Edit, Trash2, CheckCircle, Info, Mail, MessageSquare, Send } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 
 interface Template {
@@ -38,8 +40,11 @@ interface Template {
   name: string;
   subject: string | null;
   body: string;
-  template_type: string | null;
-  created_by: string | null;
+  purpose: string;
+  channel: string;
+  placeholders: string[] | null;
+  sms_character_limit: number | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +53,14 @@ interface TemplateManagerProps {
   onUseTemplate?: (template: Template) => void;
 }
 
+// Available placeholders for different purposes
+const PLACEHOLDER_OPTIONS = {
+  member: ['[Member Name]', '[Member Email]', '[Member Phone]'],
+  event: ['[Event Title]', '[Event Date]', '[Event Location]'],
+  trip: ['[Trip Title]', '[Trip Date]', '[Trip Destination]', '[Trip Seat Number]'],
+  donation: ['[Donation Amount]', '[Donation Type]', '[Receipt Number]']
+};
+
 export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,21 +68,37 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
+  // Filters
+  const [filterPurpose, setFilterPurpose] = useState<string>('all');
+  const [filterChannel, setFilterChannel] = useState<string>('all');
+
   const [formData, setFormData] = useState({
     name: '',
     subject: '',
     body: '',
-    template_type: 'general'
+    purpose: 'general',
+    channel: 'email'
   });
 
-  // Fetch templates
+  // Fetch templates with filters
   const { data: templates, isLoading } = useQuery({
-    queryKey: ['communication-templates'],
+    queryKey: ['communication-templates', filterPurpose, filterChannel],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('communication_templates')
         .select('*')
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
+
+      if (filterPurpose !== 'all') {
+        query = query.eq('purpose', filterPurpose);
+      }
+
+      if (filterChannel !== 'all') {
+        query = query.eq('channel', filterChannel);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as Template[];
@@ -231,6 +260,34 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
     }
   };
 
+  const insertPlaceholder = (placeholder: string) => {
+    const textarea = document.getElementById('template-body') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = formData.body;
+      const before = text.substring(0, start);
+      const after = text.substring(end);
+      const newText = before + placeholder + ' ' + after;
+      setFormData({ ...formData, body: newText });
+
+      // Set cursor position after inserted placeholder
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + placeholder.length + 1, start + placeholder.length + 1);
+      }, 0);
+    }
+  };
+
+  const getCharacterCount = () => {
+    const count = formData.body.length;
+    if (formData.channel === 'sms') {
+      const smsCount = Math.ceil(count / 160);
+      return `${count} characters (${smsCount} SMS${smsCount !== 1 ? 's' : ''})`;
+    }
+    return `${count} characters`;
+  };
+
   if (isLoading) {
     return <div>Loading templates...</div>;
   }
@@ -246,7 +303,7 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
                 Message Templates
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Create and manage reusable message templates
+                Create and manage reusable message templates with dynamic placeholders
               </p>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -255,17 +312,60 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Label htmlFor="filter-purpose">Filter by Purpose</Label>
+              <Select value={filterPurpose} onValueChange={setFilterPurpose}>
+                <SelectTrigger id="filter-purpose">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Purposes</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
+                  <SelectItem value="trip">Trip</SelectItem>
+                  <SelectItem value="donation">Donation</SelectItem>
+                  <SelectItem value="membership">Membership</SelectItem>
+                  <SelectItem value="announcement">Announcement</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="confirmation">Confirmation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="filter-channel">Filter by Channel</Label>
+              <Select value={filterChannel} onValueChange={setFilterChannel}>
+                <SelectTrigger id="filter-channel">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Channels</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  <SelectItem value="push">Push Notification</SelectItem>
+                  <SelectItem value="multi">Multi-Channel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Template List */}
           {!templates || templates.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No templates yet. Create your first template to get started.
+              {filterPurpose !== 'all' || filterChannel !== 'all'
+                ? 'No templates match your filters.'
+                : 'No templates yet. Create your first template to get started.'}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Purpose</TableHead>
+                  <TableHead>Channel</TableHead>
                   <TableHead>Subject</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -275,8 +375,18 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
                 {templates.map((template) => (
                   <TableRow key={template.id}>
                     <TableCell className="font-medium">{template.name}</TableCell>
-                    <TableCell className="capitalize">
-                      {template.template_type || 'general'}
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {template.purpose}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {template.channel === 'email' && <Mail className="h-3 w-3" />}
+                        {template.channel === 'sms' && <MessageSquare className="h-3 w-3" />}
+                        {template.channel === 'whatsapp' && <Send className="h-3 w-3" />}
+                        <span className="capitalize text-sm">{template.channel}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {template.subject || <span className="text-muted-foreground">—</span>}
@@ -322,11 +432,11 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
 
       {/* Create Template Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Template</DialogTitle>
             <DialogDescription>
-              Create a reusable message template for communications
+              Create a reusable message template with dynamic placeholders
             </DialogDescription>
           </DialogHeader>
 
@@ -342,40 +452,176 @@ export function TemplateManager({ onUseTemplate }: TemplateManagerProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="create-type">Type</Label>
+                <Label htmlFor="create-purpose">Purpose *</Label>
                 <Select
-                  value={formData.template_type}
-                  onValueChange={(value) => setFormData({ ...formData, template_type: value })}
+                  value={formData.purpose}
+                  onValueChange={(value) => setFormData({ ...formData, purpose: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="create-purpose">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General</SelectItem>
                     <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="trip">Trip</SelectItem>
                     <SelectItem value="donation">Donation</SelectItem>
                     <SelectItem value="membership">Membership</SelectItem>
+                    <SelectItem value="announcement">Announcement</SelectItem>
+                    <SelectItem value="reminder">Reminder</SelectItem>
+                    <SelectItem value="confirmation">Confirmation</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="create-subject">Subject (Optional)</Label>
-              <Input
-                id="create-subject"
-                placeholder="Message subject"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              />
+              <Label htmlFor="create-channel">Channel *</Label>
+              <Select
+                value={formData.channel}
+                onValueChange={(value) => setFormData({ ...formData, channel: value })}
+              >
+                <SelectTrigger id="create-channel">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="sms">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      SMS
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="whatsapp">
+                    <div className="flex items-center gap-2">
+                      <Send className="h-4 w-4" />
+                      WhatsApp
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="push">Push Notification</SelectItem>
+                  <SelectItem value="multi">Multi-Channel</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Channel-specific alerts */}
+            {formData.channel === 'sms' && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  SMS messages are limited to 160 characters per message. Longer messages will be split into multiple SMS.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {formData.channel === 'whatsapp' && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  WhatsApp supports *bold*, _italic_, and ~strikethrough~ formatting. Use emojis to make messages engaging.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {(formData.channel === 'email' || formData.channel === 'multi') && (
+              <div className="space-y-2">
+                <Label htmlFor="create-subject">Subject {formData.channel === 'email' ? '*' : '(For Email)'}</Label>
+                <Input
+                  id="create-subject"
+                  placeholder="Message subject"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="create-body">Message Body *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="template-body">Message Body *</Label>
+                <span className="text-xs text-muted-foreground">{getCharacterCount()}</span>
+              </div>
+
+              {/* Placeholder Insert Buttons */}
+              <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+                <div className="w-full text-xs font-semibold text-muted-foreground mb-1">
+                  Insert Placeholders:
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="text-xs text-muted-foreground">Member:</div>
+                  {PLACEHOLDER_OPTIONS.member.map((ph) => (
+                    <Button
+                      key={ph}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => insertPlaceholder(ph)}
+                      className="h-7 text-xs"
+                    >
+                      {ph}
+                    </Button>
+                  ))}
+                </div>
+                {(formData.purpose === 'event' || formData.purpose === 'reminder' || formData.purpose === 'confirmation') && (
+                  <div className="flex flex-wrap gap-2">
+                    <div className="text-xs text-muted-foreground">Event:</div>
+                    {PLACEHOLDER_OPTIONS.event.map((ph) => (
+                      <Button
+                        key={ph}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => insertPlaceholder(ph)}
+                        className="h-7 text-xs"
+                      >
+                        {ph}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {formData.purpose === 'trip' && (
+                  <div className="flex flex-wrap gap-2">
+                    <div className="text-xs text-muted-foreground">Trip:</div>
+                    {PLACEHOLDER_OPTIONS.trip.map((ph) => (
+                      <Button
+                        key={ph}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => insertPlaceholder(ph)}
+                        className="h-7 text-xs"
+                      >
+                        {ph}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {formData.purpose === 'donation' && (
+                  <div className="flex flex-wrap gap-2">
+                    <div className="text-xs text-muted-foreground">Donation:</div>
+                    {PLACEHOLDER_OPTIONS.donation.map((ph) => (
+                      <Button
+                        key={ph}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => insertPlaceholder(ph)}
+                        className="h-7 text-xs"
+                      >
+                        {ph}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Textarea
-                id="create-body"
-                placeholder="Enter template content..."
-                rows={8}
+                id="template-body"
+                placeholder="Enter template content... Click placeholder buttons above to insert dynamic fields."
+                rows={10}
                 value={formData.body}
                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
               />
