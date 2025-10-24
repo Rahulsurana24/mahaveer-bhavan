@@ -1,43 +1,22 @@
 import { useState, useEffect } from "react";
-import { MainLayout } from "@/components/layout/main-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import MobileLayout from "@/components/layout/MobileLayout";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { 
   Calendar, 
   MapPin, 
   Clock, 
   Users,
   Search,
-  Filter,
-  Heart,
-  Share2,
-  DollarSign,
-  CheckCircle,
-  AlertCircle,
-  Info
+  CheckCircle
 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useMemberData } from '@/hooks/useMemberData';
 import { useToast } from '@/hooks/use-toast';
 import { Loading } from '@/components/ui/loading';
+import { cn } from "@/lib/utils";
 
 const Events = () => {
   const { member } = useMemberData();
@@ -133,341 +112,144 @@ const Events = () => {
 
   if (loading) {
     return (
-      <MainLayout title="Events">
+      <MobileLayout title="Events">
         <div className="flex justify-center py-12">
-          <Loading size="lg" text="Loading events..." />
+          <Loading size="lg" />
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      "upcoming": "default",
-      "past": "secondary",
-      "cancelled": "destructive"
-    };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
-  };
-
-  const getTypeBadge = (type: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      "Religious": "default",
-      "Social": "secondary",
-      "Trip": "outline",
-      "Cultural": "destructive"
-    };
-    return <Badge variant={variants[type] || "outline"}>{type}</Badge>;
-  };
-
-  const getAvailabilityStatus = (registered: number, capacity: number) => {
-    const percentage = (registered / capacity) * 100;
-    if (percentage >= 90) return { status: "few-spots", color: "text-red-500", icon: AlertCircle };
-    if (percentage >= 70) return { status: "filling-fast", color: "text-yellow-500", icon: Info };
-    return { status: "available", color: "text-green-500", icon: CheckCircle };
-  };
-
   return (
-    <MainLayout title="Events">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-2">Trust Events</h1>
-          <p className="text-muted-foreground">
-            Join our community events, spiritual gatherings, and social activities
-          </p>
+    <MobileLayout title="Events">
+      <div className="space-y-4">
+        {/* Search Bar */}
+        <div className="sticky top-0 z-10 bg-white px-4 py-3 border-b">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search events..."
+              className="pl-10 bg-gray-50 border-none focus-visible:ring-1 focus-visible:ring-primary"
+            />
+          </div>
         </div>
 
-        {/* Search and Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search events by title or location..."
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Select>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Event Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="religious">Religious</SelectItem>
-                    <SelectItem value="social">Social</SelectItem>
-                    <SelectItem value="trip">Trip</SelectItem>
-                    <SelectItem value="cultural">Cultural</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* Tabs */}
+        <div className="flex gap-2 px-4 overflow-x-auto scrollbar-hide">
+          {["upcoming", "registered", "past"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
+                activeTab === tab
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
+            >
+              {tab === "upcoming" && "Upcoming"}
+              {tab === "registered" && "My Events"}
+              {tab === "past" && "Past"}
+            </button>
+          ))}
+        </div>
 
-                <Select>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Date" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Dates</SelectItem>
-                    <SelectItem value="this-week">This Week</SelectItem>
-                    <SelectItem value="this-month">This Month</SelectItem>
-                    <SelectItem value="next-month">Next Month</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upcoming">Upcoming Events</TabsTrigger>
-            <TabsTrigger value="registered">My Registrations</TabsTrigger>
-            <TabsTrigger value="past">Past Events</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activeTab} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getEventsByTab(activeTab).map((event) => {
-                const isRegistered = registrations.has(event.id);
-                const eventDate = new Date(event.date);
-                const isPast = eventDate < new Date();
-                
-                return (
-                  <Card 
-                    key={event.id} 
-                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => setSelectedEvent(event)}
-                  >
-                    <div className="aspect-video relative bg-muted">
-                      {event.image_url && (
-                        <img 
-                          src={event.image_url} 
-                          alt={event.title}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                      <div className="absolute top-2 left-2">
-                        {getTypeBadge(event.type)}
-                      </div>
+        {/* Events List */}
+        <div className="px-4 space-y-3 pb-4">
+          {getEventsByTab(activeTab).map((event) => {
+            const isRegistered = registrations.has(event.id);
+            const eventDate = new Date(event.date);
+            const isPast = eventDate < new Date();
+            
+            return (
+              <Card key={event.id} className="overflow-hidden">
+                <CardContent className="p-0">
+                  {/* Event Image */}
+                  {event.image_url && (
+                    <div className="relative aspect-video bg-gray-100">
+                      <img 
+                        src={event.image_url} 
+                        alt={event.title}
+                        className="w-full h-full object-cover"
+                      />
                       {isRegistered && (
-                        <div className="absolute bottom-2 right-2">
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Registered
-                          </Badge>
+                        <Badge className="absolute top-2 right-2 bg-green-500">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Registered
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Event Info */}
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-base text-gray-900 line-clamp-2">
+                        {event.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                        {event.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Calendar className="h-4 w-4 flex-shrink-0" />
+                        <span>{eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Clock className="h-4 w-4 flex-shrink-0" />
+                        <span>{event.time || 'TBA'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span className="line-clamp-1">{event.location}</span>
+                      </div>
+                      {event.capacity && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Users className="h-4 w-4 flex-shrink-0" />
+                          <span>{event.capacity} seats</span>
                         </div>
                       )}
                     </div>
-                    
-                    <CardContent className="p-4 space-y-3">
-                      <div>
-                        <h3 className="font-semibold mb-1 line-clamp-1">{event.title}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {event.description}
-                        </p>
-                      </div>
 
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{eventDate.toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>{event.time}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="line-clamp-1">{event.location}</span>
-                        </div>
-                      </div>
+                    {!isRegistered && !isPast && (
+                      <Button 
+                        onClick={() => handleRegister(event.id)}
+                        className="w-full"
+                        disabled={registering}
+                        size="sm"
+                      >
+                        {registering ? "Registering..." : "Register Now"}
+                      </Button>
+                    )}
 
-                      {event.capacity && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span>Capacity: {event.capacity}</span>
-                        </div>
-                      )}
-
-                      {event.fees > 0 && (
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">₹{event.fees}</span>
-                        </div>
-                      )}
-
-                      {!isRegistered && !isPast && (
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRegister(event.id);
-                          }}
-                          className="w-full"
-                          disabled={registering}
-                        >
-                          Register Now
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            {getEventsByTab(activeTab).length === 0 && (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No events found</h3>
-                  <p className="text-muted-foreground">
-                    {activeTab === "upcoming" && "No upcoming events at the moment."}
-                    {activeTab === "registered" && "You haven't registered for any events yet."}
-                    {activeTab === "past" && "No past events to display."}
-                  </p>
+                    {isPast && (
+                      <Badge variant="secondary" className="w-full justify-center">
+                        Event Ended
+                      </Badge>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+            );
+          })}
 
-        {/* Event Details Dialog */}
-        <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedEvent?.title}
-                {selectedEvent?.isRegistered && (
-                  <Badge variant="default" className="bg-green-500">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Registered
-                  </Badge>
-                )}
-              </DialogTitle>
-              <DialogDescription className="flex items-center gap-2">
-                {getTypeBadge(selectedEvent?.type)}
-                {getStatusBadge(selectedEvent?.status)}
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedEvent && (
-              <div className="space-y-6">
-                <img 
-                  src={selectedEvent.image} 
-                  alt={selectedEvent.title}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                
-                <div className="space-y-4">
-                  <p className="text-muted-foreground">{selectedEvent.description}</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">Date</p>
-                          <p className="text-sm text-muted-foreground">{selectedEvent.date}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">Time</p>
-                          <p className="text-sm text-muted-foreground">{selectedEvent.time}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">Location</p>
-                          <p className="text-sm text-muted-foreground">{selectedEvent.location}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">Capacity</p>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedEvent.registered}/{selectedEvent.capacity} registered
-                          </p>
-                        </div>
-                      </div>
-                      {selectedEvent.fees > 0 && (
-                        <div className="flex items-center gap-3">
-                          <DollarSign className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">Fees</p>
-                            <p className="text-sm text-muted-foreground">₹{selectedEvent.fees}</p>
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={selectedEvent.organizer.avatar} />
-                          <AvatarFallback>
-                            {selectedEvent.organizer.name.split(' ').map((n: string) => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">Organizer</p>
-                          <p className="text-sm text-muted-foreground">{selectedEvent.organizer.name}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedEvent.requirements && (
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Requirements & Instructions</h4>
-                      <p className="text-sm text-muted-foreground">{selectedEvent.requirements}</p>
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    {selectedEvent.tags.map((tag: string) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  {selectedEvent.status === "upcoming" && (
-                    <>
-                      {selectedEvent.isRegistered ? (
-                        <Button variant="destructive" className="flex-1">
-                          Cancel Registration
-                        </Button>
-                      ) : (
-                        <Button className="flex-1">
-                          Register Now
-                        </Button>
-                      )}
-                    </>
-                  )}
-                  <Button variant="outline">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+          {/* Empty State */}
+          {getEventsByTab(activeTab).length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <Calendar className="h-16 w-16 text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
+              <p className="text-sm text-gray-500 text-center">
+                {activeTab === "upcoming" && "No upcoming events at the moment."}
+                {activeTab === "registered" && "You haven't registered for any events yet."}
+                {activeTab === "past" && "No past events to display."}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
