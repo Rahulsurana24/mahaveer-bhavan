@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -10,15 +12,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Calendar, Filter } from 'lucide-react';
+import { Users, Calendar, Filter, ChevronDown, MapPin } from 'lucide-react';
 
 export interface RecipientFilter {
   type: 'all' | 'membership_type' | 'event_registration' | 'trip_registration' | 'custom';
   membershipType?: string;
   eventId?: string;
   tripId?: string;
+  activityStatus?: string[];
+  cities?: string[];
+  states?: string[];
+  registrationDateFrom?: string;
+  registrationDateTo?: string;
   customFilter?: Record<string, any>;
 }
 
@@ -30,6 +39,14 @@ interface RecipientSelectorProps {
 
 export function RecipientSelector({ value, onChange, onCountChange }: RecipientSelectorProps) {
   const [recipientCount, setRecipientCount] = useState(0);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Advanced filter states
+  const [activityStatus, setActivityStatus] = useState<string[]>(['active']);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Fetch membership type counts
   const { data: membershipCounts } = useQuery({
@@ -37,7 +54,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
     queryFn: async () => {
       const { data, error } = await supabase
         .from('members')
-        .select('membership_type')
+        .select('membership_type, status')
         .eq('status', 'active');
 
       if (error) throw error;
@@ -51,6 +68,40 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
         total: data.length,
         byType: counts
       };
+    }
+  });
+
+  // Fetch unique cities
+  const { data: cities } = useQuery({
+    queryKey: ['member-cities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('members')
+        .select('city')
+        .not('city', 'is', null)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const uniqueCities = [...new Set(data.map(m => m.city).filter(Boolean))];
+      return uniqueCities.sort();
+    }
+  });
+
+  // Fetch unique states
+  const { data: states } = useQuery({
+    queryKey: ['member-states'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('members')
+        .select('state')
+        .not('state', 'is', null)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const uniqueStates = [...new Set(data.map(m => m.state).filter(Boolean))];
+      return uniqueStates.sort();
     }
   });
 
@@ -94,21 +145,49 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
 
         switch (value.type) {
           case 'all':
-            const { count: allCount, error: allError } = await supabase
+            let allQuery = supabase
               .from('members')
-              .select('*', { count: 'exact', head: true })
-              .eq('status', 'active');
+              .select('*', { count: 'exact', head: true });
+
+            // Apply activity status filter
+            if (activityStatus.length > 0 && activityStatus.length < 3) {
+              allQuery = allQuery.in('status', activityStatus);
+            }
+
+            // Apply location filters
+            if (selectedCities.length > 0) {
+              allQuery = allQuery.in('city', selectedCities);
+            }
+            if (selectedStates.length > 0) {
+              allQuery = allQuery.in('state', selectedStates);
+            }
+
+            // Apply date range filter
+            if (dateFrom) {
+              allQuery = allQuery.gte('date_registered', dateFrom);
+            }
+            if (dateTo) {
+              allQuery = allQuery.lte('date_registered', dateTo);
+            }
+
+            const { count: allCount, error: allError } = await allQuery;
             if (allError) throw allError;
             count = allCount || 0;
             break;
 
           case 'membership_type':
             if (value.membershipType) {
-              const { count: typeCount, error: typeError } = await supabase
+              let typeQuery = supabase
                 .from('members')
                 .select('*', { count: 'exact', head: true })
-                .eq('status', 'active')
                 .eq('membership_type', value.membershipType);
+
+              // Apply activity status filter
+              if (activityStatus.length > 0 && activityStatus.length < 3) {
+                typeQuery = typeQuery.in('status', activityStatus);
+              }
+
+              const { count: typeCount, error: typeError } = await typeQuery;
               if (typeError) throw typeError;
               count = typeCount || 0;
             }
@@ -156,7 +235,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
     };
 
     calculateCount();
-  }, [value, onCountChange]);
+  }, [value, activityStatus, selectedCities, selectedStates, dateFrom, dateTo, onCountChange]);
 
   const handleFilterTypeChange = (type: RecipientFilter['type']) => {
     onChange({
@@ -164,7 +243,44 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
       membershipType: undefined,
       eventId: undefined,
       tripId: undefined,
+      activityStatus,
+      cities: selectedCities,
+      states: selectedStates,
+      registrationDateFrom: dateFrom,
+      registrationDateTo: dateTo,
       customFilter: undefined
+    });
+  };
+
+  const handleActivityStatusToggle = (status: string) => {
+    const newStatus = activityStatus.includes(status)
+      ? activityStatus.filter(s => s !== status)
+      : [...activityStatus, status];
+    setActivityStatus(newStatus);
+
+    onChange({
+      ...value,
+      activityStatus: newStatus
+    });
+  };
+
+  const handleCityToggle = (city: string) => {
+    const newCities = selectedCities.includes(city)
+      ? selectedCities.filter(c => c !== city)
+      : [...selectedCities, city];
+    setSelectedCities(newCities);
+
+    onChange({
+      ...value,
+      cities: newCities
+    });
+  };
+
+  const handleApplyDateFilter = () => {
+    onChange({
+      ...value,
+      registrationDateFrom: dateFrom,
+      registrationDateTo: dateTo
     });
   };
 
@@ -226,7 +342,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
                   {value.type === 'membership_type' && (
                     <Select
                       value={value.membershipType || ""}
-                      onValueChange={handleMembershipTypeChange}
+                      onValueChange={(membershipType) => onChange({ ...value, membershipType })}
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Select membership type" />
@@ -264,7 +380,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
                   {value.type === 'event_registration' && (
                     <Select
                       value={value.eventId || ""}
-                      onValueChange={handleEventChange}
+                      onValueChange={(eventId) => onChange({ ...value, eventId })}
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Select event" />
@@ -292,7 +408,7 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
                   {value.type === 'trip_registration' && (
                     <Select
                       value={value.tripId || ""}
-                      onValueChange={handleTripChange}
+                      onValueChange={(tripId) => onChange({ ...value, tripId })}
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Select trip" />
@@ -311,6 +427,165 @@ export function RecipientSelector({ value, onChange, onCountChange }: RecipientS
             </div>
           </div>
         </RadioGroup>
+
+        {/* Advanced Filters */}
+        <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <span className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Advanced Filters
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-4">
+            {/* Activity Status Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Activity Status</Label>
+              <div className="flex flex-wrap gap-3">
+                {['active', 'pending', 'inactive'].map((status) => (
+                  <div key={status} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`status-${status}`}
+                      checked={activityStatus.includes(status)}
+                      onCheckedChange={() => handleActivityStatusToggle(status)}
+                    />
+                    <Label htmlFor={`status-${status}`} className="capitalize cursor-pointer text-sm">
+                      {status}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Location Filters */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Location Filters
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="city-filter" className="text-xs">City</Label>
+                  <Select
+                    value={selectedCities[0] || ""}
+                    onValueChange={(city) => {
+                      if (city && !selectedCities.includes(city)) {
+                        handleCityToggle(city);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="city-filter" className="text-sm">
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cities?.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedCities.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedCities.map((city) => (
+                        <Badge
+                          key={city}
+                          variant="secondary"
+                          className="text-xs cursor-pointer"
+                          onClick={() => handleCityToggle(city)}
+                        >
+                          {city} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="state-filter" className="text-xs">State</Label>
+                  <Select
+                    value={selectedStates[0] || ""}
+                    onValueChange={(state) => {
+                      if (state && !selectedStates.includes(state)) {
+                        const newStates = [...selectedStates, state];
+                        setSelectedStates(newStates);
+                        onChange({ ...value, states: newStates });
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="state-filter" className="text-sm">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {states?.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedStates.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedStates.map((state) => (
+                        <Badge
+                          key={state}
+                          variant="secondary"
+                          className="text-xs cursor-pointer"
+                          onClick={() => {
+                            const newStates = selectedStates.filter(s => s !== state);
+                            setSelectedStates(newStates);
+                            onChange({ ...value, states: newStates });
+                          }}
+                        >
+                          {state} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Registration Date Range</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="date-from" className="text-xs">From</Label>
+                  <Input
+                    id="date-from"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="date-to" className="text-xs">To</Label>
+                  <Input
+                    id="date-to"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              {(dateFrom || dateTo) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleApplyDateFilter}
+                  className="w-full text-xs"
+                >
+                  Apply Date Filter
+                </Button>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {recipientCount === 0 && value.type !== 'all' && (
           <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
