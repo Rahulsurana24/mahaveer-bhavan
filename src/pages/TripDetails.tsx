@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import MobileLayout from '@/components/layout/MobileLayout';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { MapPin, Calendar, Users, DollarSign, Clock, Bus, FileText, Hotel, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TripRegistrationDialog } from '@/components/trips/TripRegistrationDialog';
+import { Loading } from '@/components/ui/loading';
 
 const TripDetails = () => {
   const { id } = useParams();
@@ -103,157 +103,159 @@ const TripDetails = () => {
 
   if (loading || !trip) {
     return (
-      <MainLayout title="Trip Details">
+      <MobileLayout title="Trip Details">
         <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Loading size="lg" />
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
   return (
-    <MainLayout title={trip.title}>
-      <div className="space-y-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">{trip.title}</h1>
-            <div className="flex items-center text-muted-foreground gap-2">
-              <MapPin className="h-4 w-4" />
-              <span>{trip.destination}</span>
-            </div>
+    <MobileLayout title={trip.title}>
+      <div className="space-y-4 px-4 pb-4">
+        {/* Header */}
+        <div className="pt-4">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <h1 className="text-xl font-bold line-clamp-2">{trip.title}</h1>
+            <Badge variant={trip.status === 'open' ? 'default' : 'secondary'} className="flex-shrink-0">
+              {trip.status}
+            </Badge>
           </div>
-          <Badge variant={trip.status === 'open' ? 'default' : 'secondary'}>
-            {trip.status}
-          </Badge>
+          <div className="flex items-center text-gray-600 gap-2">
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm">{trip.destination}</span>
+          </div>
         </div>
 
+        {/* Description */}
         <Card>
-          <CardHeader>
-            <CardTitle>Trip Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">{trip.description}</p>
+          <CardContent className="p-4">
+            <p className="text-sm text-gray-600 leading-relaxed">{trip.description}</p>
+          </CardContent>
+        </Card>
 
-            <Separator />
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Duration</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
+        {/* Trip Information Grid */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3 text-sm">Trip Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-start gap-2">
+                <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Dates</p>
+                  <p className="text-xs font-medium">
+                    {new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Departure</p>
-                  <p className="text-sm text-muted-foreground">{trip.departure_time}</p>
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Departure</p>
+                  <p className="text-xs font-medium">{trip.departure_time}</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Bus className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Transport</p>
-                  <p className="text-sm text-muted-foreground">{trip.transport_type}</p>
+              <div className="flex items-start gap-2">
+                <Bus className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Transport</p>
+                  <p className="text-xs font-medium">{trip.transport_type}</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Capacity</p>
-                  <p className="text-sm text-muted-foreground">{trip.capacity} seats</p>
+              <div className="flex items-start gap-2">
+                <Users className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Capacity</p>
+                  <p className="text-xs font-medium">{trip.capacity} seats</p>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <DollarSign className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Price</p>
-                  <p className="text-sm text-muted-foreground">₹{trip.price}</p>
-                </div>
+            {/* Price - Prominent Display */}
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary" />
+                <span className="text-sm text-gray-500">Trip Fee</span>
               </div>
+              <span className="text-2xl font-bold text-primary">₹{trip.price}</span>
             </div>
           </CardContent>
         </Card>
 
+        {/* Travel Assignments */}
         {isRegistered && assignment && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Hotel className="h-5 w-5" />
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3 text-sm flex items-center gap-2">
+                <Hotel className="h-4 w-4 text-primary" />
                 My Travel Assignments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
                 {assignment.room_number && (
-                  <div>
-                    <p className="text-sm font-medium">Room Number</p>
-                    <p className="text-2xl font-bold text-primary">{assignment.room_number}</p>
+                  <div className="p-3 bg-primary/5 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Room</p>
+                    <p className="text-xl font-bold text-primary">{assignment.room_number}</p>
                   </div>
                 )}
                 {assignment.bus_seat_number && (
-                  <div>
-                    <p className="text-sm font-medium">Bus Seat</p>
-                    <p className="text-2xl font-bold text-primary">{assignment.bus_seat_number}</p>
+                  <div className="p-3 bg-primary/5 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Bus Seat</p>
+                    <p className="text-xl font-bold text-primary">{assignment.bus_seat_number}</p>
                   </div>
                 )}
                 {assignment.train_seat_number && (
-                  <div>
-                    <p className="text-sm font-medium">Train Seat</p>
-                    <p className="text-2xl font-bold text-primary">{assignment.train_seat_number}</p>
+                  <div className="p-3 bg-primary/5 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Train Seat</p>
+                    <p className="text-xl font-bold text-primary">{assignment.train_seat_number}</p>
                   </div>
                 )}
                 {assignment.pnr_number && (
-                  <div>
-                    <p className="text-sm font-medium">PNR Number</p>
-                    <p className="text-lg font-mono">{assignment.pnr_number}</p>
+                  <div className="p-3 bg-primary/5 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 mb-1">PNR Number</p>
+                    <p className="text-base font-mono font-medium">{assignment.pnr_number}</p>
                   </div>
                 )}
                 {assignment.flight_ticket_number && (
-                  <div>
-                    <p className="text-sm font-medium">Flight Ticket</p>
-                    <p className="text-lg font-mono">{assignment.flight_ticket_number}</p>
+                  <div className="p-3 bg-primary/5 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 mb-1">Flight Ticket</p>
+                    <p className="text-base font-mono font-medium">{assignment.flight_ticket_number}</p>
                   </div>
                 )}
               </div>
               {assignment.additional_notes && (
-                <div className="mt-4 p-3 bg-muted rounded">
-                  <p className="text-sm font-medium mb-1">Additional Notes</p>
-                  <p className="text-sm text-muted-foreground">{assignment.additional_notes}</p>
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs font-medium text-gray-700 mb-1">Additional Notes</p>
+                  <p className="text-xs text-gray-600">{assignment.additional_notes}</p>
                 </div>
               )}
             </CardContent>
           </Card>
         )}
 
+        {/* Trip Documents */}
         {isRegistered && documents.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3 text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
                 Trip Documents
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h3>
               <div className="space-y-2">
                 {documents.map((doc) => (
                   <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{doc.title}</p>
+                    <div className="flex-1 min-w-0 mr-3">
+                      <p className="font-medium text-sm">{doc.title}</p>
                       {doc.description && (
-                        <p className="text-sm text-muted-foreground">{doc.description}</p>
+                        <p className="text-xs text-gray-500 line-clamp-1">{doc.description}</p>
                       )}
                     </div>
-                    <Button size="sm" variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
+                    <Button size="sm" variant="outline" className="flex-shrink-0">
+                      <Download className="h-3 w-3 mr-1" />
+                      Get
                     </Button>
                   </div>
                 ))}
@@ -262,14 +264,11 @@ const TripDetails = () => {
           </Card>
         )}
 
+        {/* Registration Button */}
         {!isRegistered && trip.status === 'open' && (
-          <Card>
-            <CardContent className="p-6">
-              <Button onClick={handleRegister} size="lg" className="w-full">
-                Register for This Trip - ₹{trip.price}
-              </Button>
-            </CardContent>
-          </Card>
+          <Button onClick={handleRegister} size="lg" className="w-full sticky bottom-4">
+            Register for Trip - ₹{trip.price}
+          </Button>
         )}
       </div>
 
@@ -285,7 +284,7 @@ const TripDetails = () => {
           onSuccess={loadTripDetails}
         />
       )}
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
