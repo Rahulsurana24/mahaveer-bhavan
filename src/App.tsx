@@ -21,6 +21,7 @@ import PasswordManagement from "./pages/auth/PasswordManagement";
 import RegistrationSuccess from "./pages/auth/RegistrationSuccess";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import MemberDashboard from "./pages/dashboard/MemberDashboard";
+import DharmaAI from "./pages/DharmaAI";
 import Events from "./pages/Events";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
@@ -97,6 +98,13 @@ const App = () => (
               <Route path="/member/dashboard" element={
                 <ProtectedRoute>
                   <MemberDashboard />
+                </ProtectedRoute>
+              } />
+
+              {/* Dharma AI Assistant - Full Screen */}
+              <Route path="/dharma-ai" element={
+                <ProtectedRoute>
+                  <DharmaAI />
                 </ProtectedRoute>
               } />
               
