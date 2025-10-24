@@ -124,7 +124,7 @@ const PasswordManagement = () => {
         });
 
         // Redirect to dashboard
-        navigate('/dashboard');
+        navigate('/member/dashboard');
       } else {
         // Manual password change
         if (!data.current_password) {
@@ -176,7 +176,7 @@ const PasswordManagement = () => {
           description: 'Your password has been updated successfully'
         });
 
-        navigate('/dashboard');
+        navigate('/member/dashboard');
       }
     } catch (error: any) {
       console.error('Password update error:', error);
