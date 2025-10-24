@@ -15,6 +15,7 @@ import Auth from "./pages/auth/Auth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import Events from "./pages/Events";
 import Messaging from "./pages/Messaging";
+import MessagingEnhanced from "./pages/MessagingEnhanced";
 import Donations from "./pages/Donations";
 import GalleryNew from "./pages/GalleryNew";
 import Notifications from "./pages/Notifications";
@@ -38,6 +39,7 @@ import AttendanceManagement from "./pages/admin/AttendanceManagement";
 import CalendarManagement from "./pages/admin/CalendarManagement";
 import ChangePassword from "./pages/ChangePassword";
 import DiagnosticPage from "./pages/DiagnosticPage";
+import { JainismChatbot } from "./components/ai/JainismChatbot";
 
 const queryClient = new QueryClient();
 
@@ -77,7 +79,7 @@ const App = () => (
               } />
               <Route path="/messages" element={
                 <ProtectedRoute>
-                  <Messaging />
+                  <MessagingEnhanced />
                 </ProtectedRoute>
               } />
               <Route path="/donations" element={
@@ -200,6 +202,9 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          
+          {/* AI Chatbot - Available throughout app */}
+          <JainismChatbot />
         </TooltipProvider>
       </AuthProvider>
     </LanguageProvider>
