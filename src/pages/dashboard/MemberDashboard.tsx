@@ -21,7 +21,8 @@ import {
   Clock,
   Users,
   Home,
-  Camera
+  Camera,
+  Plane
 } from 'lucide-react';
 
 const MemberDashboard = () => {
@@ -169,7 +170,7 @@ const MemberDashboard = () => {
             <div className="flex items-center gap-3">
               {/* Notifications */}
               <button
-                onClick={() => navigate('/dashboard/notifications')}
+                onClick={() => navigate('/notifications')}
                 className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
               >
                 <Bell className="h-6 w-6 text-gray-300" />
@@ -182,7 +183,7 @@ const MemberDashboard = () => {
 
               {/* Profile */}
               <button
-                onClick={() => navigate('/dashboard/profile')}
+                onClick={() => navigate('/profile')}
                 className="p-2 rounded-full hover:bg-white/10 transition-colors"
               >
                 <User className="h-6 w-6 text-gray-300" />
@@ -196,7 +197,7 @@ const MemberDashboard = () => {
       <div className="px-4 py-6 space-y-6">
         {/* Digital ID Card Preview */}
         <Card
-          onClick={() => navigate('/dashboard/id-card')}
+          onClick={() => navigate('/id-card')}
           className="bg-gradient-to-br from-[#00A36C] to-[#008F5C] border-none shadow-xl cursor-pointer hover:shadow-2xl transition-shadow"
         >
           <CardContent className="p-6">
@@ -238,59 +239,87 @@ const MemberDashboard = () => {
 
         {/* Quick Links Grid */}
         <div className="grid grid-cols-2 gap-3">
-          {/* Events & Trips */}
+          {/* Events */}
           <Card
-            onClick={() => navigate('/dashboard/events')}
+            onClick={() => navigate('/events')}
             className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
           >
             <CardContent className="p-6 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-[#00A36C]/20 rounded-full mb-3">
                 <Calendar className="h-6 w-6 text-[#00A36C]" />
               </div>
-              <h3 className="text-white font-semibold mb-1">Events & Trips</h3>
+              <h3 className="text-white font-semibold mb-1">Events</h3>
               <p className="text-xs text-gray-400">Browse & Register</p>
+            </CardContent>
+          </Card>
+
+          {/* Trips */}
+          <Card
+            onClick={() => navigate('/trips')}
+            className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
+          >
+            <CardContent className="p-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500/20 rounded-full mb-3">
+                <Plane className="h-6 w-6 text-blue-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Trips</h3>
+              <p className="text-xs text-gray-400">Pilgrimage & Tours</p>
             </CardContent>
           </Card>
 
           {/* Make a Donation */}
           <Card
-            onClick={() => navigate('/dashboard/donate')}
+            onClick={() => navigate('/donations')}
             className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
           >
             <CardContent className="p-6 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-[#FFD700]/20 rounded-full mb-3">
                 <Heart className="h-6 w-6 text-[#FFD700]" />
               </div>
-              <h3 className="text-white font-semibold mb-1">Make a Donation</h3>
+              <h3 className="text-white font-semibold mb-1">Donations</h3>
               <p className="text-xs text-gray-400">Support the Trust</p>
             </CardContent>
           </Card>
 
           {/* Messaging Hub */}
           <Card
-            onClick={() => navigate('/dashboard/messages')}
+            onClick={() => navigate('/messages')}
             className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
           >
             <CardContent className="p-6 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500/20 rounded-full mb-3">
-                <MessageCircle className="h-6 w-6 text-blue-400" />
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-500/20 rounded-full mb-3">
+                <MessageCircle className="h-6 w-6 text-purple-400" />
               </div>
-              <h3 className="text-white font-semibold mb-1">Messaging Hub</h3>
+              <h3 className="text-white font-semibold mb-1">Messages</h3>
               <p className="text-xs text-gray-400">Chat & Connect</p>
             </CardContent>
           </Card>
 
           {/* Community Gallery */}
           <Card
-            onClick={() => navigate('/dashboard/gallery')}
+            onClick={() => navigate('/gallery')}
             className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
           >
             <CardContent className="p-6 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-500/20 rounded-full mb-3">
-                <ImageIcon className="h-6 w-6 text-purple-400" />
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-pink-500/20 rounded-full mb-3">
+                <ImageIcon className="h-6 w-6 text-pink-400" />
               </div>
-              <h3 className="text-white font-semibold mb-1">Community Gallery</h3>
+              <h3 className="text-white font-semibold mb-1">Gallery</h3>
               <p className="text-xs text-gray-400">View & Share</p>
+            </CardContent>
+          </Card>
+
+          {/* Dharma AI Assistant */}
+          <Card
+            onClick={() => navigate('/dharma-ai')}
+            className="bg-gradient-to-br from-[#00A36C] to-[#008F5C] border-none hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <CardContent className="p-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-3">
+                <span className="text-2xl">🕉️</span>
+              </div>
+              <h3 className="text-white font-semibold mb-1">Dharma AI</h3>
+              <p className="text-xs text-white/80">Jain Knowledge</p>
             </CardContent>
           </Card>
         </div>
@@ -358,7 +387,7 @@ const MemberDashboard = () => {
 
                     {!checkRegistration(upcomingEvents[0]) && (
                       <Button
-                        onClick={() => navigate(`/dashboard/events/${upcomingEvents[0].id}`)}
+                        onClick={() => navigate(`/events/${upcomingEvents[0].id}`)}
                         className="w-full bg-[#FFD700] hover:bg-[#FFC700] text-[#1C1C1C] font-bold"
                       >
                         View & Register
@@ -372,7 +401,7 @@ const MemberDashboard = () => {
 
                 <Button
                   variant="ghost"
-                  onClick={() => navigate('/dashboard/events')}
+                  onClick={() => navigate('/events')}
                   className="w-full text-[#00A36C] hover:text-[#008F5C] hover:bg-white/5"
                 >
                   View All Events
@@ -398,7 +427,7 @@ const MemberDashboard = () => {
                 {recentAnnouncements.map((announcement: any) => (
                   <div
                     key={announcement.id}
-                    onClick={() => navigate(`/dashboard/announcement/${announcement.id}`)}
+                    onClick={() => navigate(`/announcement/${announcement.id}`)}
                     className="p-4 hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -425,7 +454,7 @@ const MemberDashboard = () => {
               <div className="p-4">
                 <Button
                   variant="ghost"
-                  onClick={() => navigate('/dashboard/announcements')}
+                  onClick={() => navigate('/announcements')}
                   className="w-full text-[#FFD700] hover:text-[#FFC700] hover:bg-white/5"
                 >
                   View All Announcements
@@ -444,9 +473,9 @@ const MemberDashboard = () => {
           <button
             onClick={() => {
               setActiveTab('home');
-              navigate('/dashboard');
+              navigate('/member/dashboard');
             }}
-            className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors"
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
           >
             <Home className={`h-6 w-6 ${activeTab === 'home' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
             <span className={`text-xs ${activeTab === 'home' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
@@ -454,13 +483,13 @@ const MemberDashboard = () => {
             </span>
           </button>
 
-          {/* Events & Trips */}
+          {/* Events */}
           <button
             onClick={() => {
               setActiveTab('events');
-              navigate('/dashboard/events');
+              navigate('/events');
             }}
-            className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors"
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
           >
             <Calendar className={`h-6 w-6 ${activeTab === 'events' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
             <span className={`text-xs ${activeTab === 'events' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
@@ -468,13 +497,27 @@ const MemberDashboard = () => {
             </span>
           </button>
 
+          {/* Trips */}
+          <button
+            onClick={() => {
+              setActiveTab('trips');
+              navigate('/trips');
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
+          >
+            <Plane className={`h-6 w-6 ${activeTab === 'trips' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
+            <span className={`text-xs ${activeTab === 'trips' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
+              Trips
+            </span>
+          </button>
+
           {/* Gallery */}
           <button
             onClick={() => {
               setActiveTab('gallery');
-              navigate('/dashboard/gallery');
+              navigate('/gallery');
             }}
-            className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors"
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
           >
             <ImageIcon className={`h-6 w-6 ${activeTab === 'gallery' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
             <span className={`text-xs ${activeTab === 'gallery' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
@@ -482,27 +525,13 @@ const MemberDashboard = () => {
             </span>
           </button>
 
-          {/* Messaging */}
-          <button
-            onClick={() => {
-              setActiveTab('messages');
-              navigate('/dashboard/messages');
-            }}
-            className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors"
-          >
-            <MessageCircle className={`h-6 w-6 ${activeTab === 'messages' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
-            <span className={`text-xs ${activeTab === 'messages' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
-              Messages
-            </span>
-          </button>
-
           {/* Profile */}
           <button
             onClick={() => {
               setActiveTab('profile');
-              navigate('/dashboard/profile');
+              navigate('/profile');
             }}
-            className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors"
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
           >
             <User className={`h-6 w-6 ${activeTab === 'profile' ? 'text-[#FFD700]' : 'text-gray-400'}`} />
             <span className={`text-xs ${activeTab === 'profile' ? 'text-[#FFD700] font-semibold' : 'text-gray-400'}`}>
