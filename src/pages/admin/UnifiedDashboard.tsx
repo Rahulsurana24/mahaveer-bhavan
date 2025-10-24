@@ -287,14 +287,14 @@ const UnifiedDashboard = () => {
 
   return (
     <AdminLayout title="Dashboard">
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 pb-4">
         {/* Header with Role Badge */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Welcome to your unified control panel</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">Welcome to your unified control panel</p>
           </div>
-          <Badge variant="default" className="text-sm">
+          <Badge variant="default" className="text-xs sm:text-sm w-fit">
             {role?.name === 'superadmin' && 'Super Admin'}
             {role?.name === 'admin' && 'Administrator'}
             {role?.name === 'management_admin' && 'Management Admin'}
@@ -302,8 +302,8 @@ const UnifiedDashboard = () => {
           </Badge>
         </div>
 
-        {/* Quick Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Quick Action Buttons - Mobile Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {quickActions.filter(a => a.visible).map((action) => {
             const Icon = action.icon;
             return (
@@ -311,48 +311,48 @@ const UnifiedDashboard = () => {
                 key={action.label}
                 size="lg"
                 onClick={action.onClick}
-                className="h-16 text-lg"
+                className="h-14 text-base w-full justify-start"
               >
-                <Icon className="h-5 w-5 mr-2" />
+                <Icon className="h-5 w-5 mr-3" />
                 {action.label}
               </Button>
             );
           })}
         </div>
 
-        {/* Enhanced KPI Cards with Trend Indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Enhanced KPI Cards - Mobile Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {kpiCards.filter(card => card.visible).map((card) => {
             const Icon = card.icon;
             const isPositive = card.trend >= 0;
             return (
-              <Card key={card.title}>
+              <Card key={card.title} className="hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                     {card.title}
                   </CardTitle>
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{card.value}</div>
+                  <div className="text-xl sm:text-2xl font-bold truncate">{card.value}</div>
                   <div className="flex items-center mt-2 text-xs">
                     {card.trend !== 0 && (
                       <>
                         {isPositive ? (
-                          <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
+                          <TrendingUp className="h-3 w-3 text-green-500 mr-1 flex-shrink-0" />
                         ) : (
-                          <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
+                          <TrendingDown className="h-3 w-3 text-red-500 mr-1 flex-shrink-0" />
                         )}
                         <span className={isPositive ? "text-green-500" : "text-red-500"}>
                           {Math.abs(card.trend).toFixed(1)}%
                         </span>
-                        <span className="text-muted-foreground ml-1">
+                        <span className="text-muted-foreground ml-1 truncate">
                           {card.trendLabel}
                         </span>
                       </>
                     )}
                     {card.trend === 0 && (
-                      <span className="text-muted-foreground">{card.trendLabel}</span>
+                      <span className="text-muted-foreground truncate">{card.trendLabel}</span>
                     )}
                   </div>
                 </CardContent>
@@ -361,21 +361,21 @@ const UnifiedDashboard = () => {
           })}
         </div>
 
-        {/* Trend Visualization Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Trend Visualization Charts - Mobile Optimized */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Membership Growth Chart */}
           <Card>
-            <CardHeader>
-              <CardTitle>Membership Growth</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Membership Growth</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={membershipTrend || []}>
+            <CardContent className="px-2 sm:px-6">
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={membershipTrend || []} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
                   <Line type="monotone" dataKey="members" stroke="#10b981" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
@@ -385,17 +385,17 @@ const UnifiedDashboard = () => {
           {/* Monthly Donation Volume Chart */}
           {isFullAdmin && (
             <Card>
-              <CardHeader>
-                <CardTitle>Monthly Donation Volume</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Monthly Donation Volume</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={donationTrend || []}>
+              <CardContent className="px-2 sm:px-6">
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={donationTrend || []} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
                     <Bar dataKey="donations" fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -404,52 +404,56 @@ const UnifiedDashboard = () => {
           )}
         </div>
 
-        {/* Activity Feed and Feature Modules */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Activity Feed - Takes 1 column */}
-          <div className="lg:col-span-1">
-            <ActivityFeed />
-          </div>
-
-          {/* Feature Modules - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Available Features</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {features.filter(f => f.visible).map((feature) => {
-                  const Icon = feature.icon;
-                  return (
-                    <Card key={feature.title} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <Icon className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">{feature.title}</CardTitle>
-                              {feature.badge && (
-                                <Badge variant="secondary" className="mt-1 text-xs">{feature.badge}</Badge>
-                              )}
-                            </div>
-                          </div>
+        {/* Feature Modules - Mobile Optimized */}
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Available Features</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            {features.filter(f => f.visible).map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <Card key={feature.title} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-5 w-5 text-primary" />
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground mb-3">{feature.description}</p>
-                        <Button
-                          className="w-full"
-                          onClick={() => navigate(feature.path)}
-                          variant={feature.canEdit ? "default" : "outline"}
-                          size="sm"
-                        >
-                          {feature.canEdit ? "Manage" : "View"}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-sm sm:text-base truncate">{feature.title}</CardTitle>
+                          {feature.badge && (
+                            <Badge variant="secondary" className="mt-1 text-xs">{feature.badge}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{feature.description}</p>
+                    <Button
+                      className="w-full h-9"
+                      onClick={() => navigate(feature.path)}
+                      variant={feature.canEdit ? "default" : "outline"}
+                      size="sm"
+                    >
+                      {feature.canEdit ? "Manage" : "View"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Activity Feed - Mobile Optimized */}
+        <div className="lg:hidden">
+          <ActivityFeed />
+        </div>
+
+        {/* Desktop Activity Feed (hidden on mobile) */}
+        <div className="hidden lg:block">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <ActivityFeed />
             </div>
           </div>
         </div>
@@ -457,10 +461,10 @@ const UnifiedDashboard = () => {
         {/* Permission Notice for View-Only Admins */}
         {isViewOnly && (
           <Card className="border-yellow-500/50 bg-yellow-500/5">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-yellow-500" />
-                <p className="text-sm text-muted-foreground">
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   You have view-only access. Contact a Super Admin to request additional permissions.
                 </p>
               </div>
