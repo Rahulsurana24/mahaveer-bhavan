@@ -393,12 +393,49 @@ USING (
 
 \echo '🔴 Part 6/3: Enabling realtime...'
 
--- Enable realtime for messaging tables
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS typing_indicators;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS message_reactions;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS groups;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF NOT EXISTS group_members;
+-- Enable realtime for messaging tables (with error handling)
+DO $$
+BEGIN
+  -- Add messages table to realtime
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  EXCEPTION
+    WHEN duplicate_object THEN
+      NULL; -- Table already in publication
+  END;
+
+  -- Add typing_indicators table to realtime
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE typing_indicators;
+  EXCEPTION
+    WHEN duplicate_object THEN
+      NULL;
+  END;
+
+  -- Add message_reactions table to realtime
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE message_reactions;
+  EXCEPTION
+    WHEN duplicate_object THEN
+      NULL;
+  END;
+
+  -- Add groups table to realtime
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE groups;
+  EXCEPTION
+    WHEN duplicate_object THEN
+      NULL;
+  END;
+
+  -- Add group_members table to realtime
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE group_members;
+  EXCEPTION
+    WHEN duplicate_object THEN
+      NULL;
+  END;
+END $$;
 
 \echo '✅ Realtime enabled'
 \echo ''
