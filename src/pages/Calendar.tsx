@@ -1,20 +1,22 @@
-import { MainLayout } from '@/components/layout/main-layout';
+import MobileLayout from '@/components/layout/MobileLayout';
 import { EventCalendar } from '@/components/calendar/EventCalendar';
 
 const Calendar = () => {
   return (
-    <MainLayout title="Calendar">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Community Calendar</h1>
-          <p className="text-muted-foreground">
+    <MobileLayout title="Calendar">
+      <div className="space-y-4">
+        <div className="bg-white px-4 py-6 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Community Calendar</h1>
+          <p className="text-sm text-gray-600">
             View upcoming events, trips, upvas, and important dates
           </p>
         </div>
 
-        <EventCalendar isAdmin={false} />
+        <div className="px-4">
+          <EventCalendar isAdmin={false} />
+        </div>
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
