@@ -176,7 +176,7 @@ const GalleryNew = () => {
   if (isLoading) {
     return (
       <MainLayout title="Gallery">
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen bg-black">
           <Loading size="lg" text="Loading gallery..." />
         </div>
       </MainLayout>
