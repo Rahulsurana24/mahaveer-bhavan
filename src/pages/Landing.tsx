@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Users, Calendar, Image, MessageSquare, Award, Shield } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { Card3D } from '@/components/3d/Card3D';
+import { Float3D } from '@/components/3d/Float3D';
+import { motion } from 'framer-motion';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -152,24 +155,26 @@ const Landing = () => {
               </p>
             </div>
 
+            {/* Features Section with 3D Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8">
               {features.map((feature, index) => (
-                <Card 
-                  key={index} 
-                  className="bg-white/5 border-white/10 backdrop-blur-xl hover:bg-white/10 hover:border-orange-500/50 transition-all duration-300 group"
-                >
-                  <CardContent className="pt-8 pb-8">
-                    <div className="space-y-4">
-                      <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-all group-hover:scale-110">
-                        <feature.icon className="h-7 w-7 text-white" />
+                <Card3D key={index} intensity={10}>
+                  <Card className="bg-white/5 border-white/10 backdrop-blur-xl hover:bg-white/10 hover:border-orange-500/50 transition-all duration-300 group h-full">
+                    <CardContent className="pt-8 pb-8">
+                      <div className="space-y-4">
+                        <Float3D duration={2 + index * 0.2} yOffset={10} delay={index * 0.1}>
+                          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-all">
+                            <feature.icon className="h-7 w-7 text-white" />
+                          </div>
+                        </Float3D>
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
+                          <p className="text-white/60 leading-relaxed">{feature.description}</p>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
-                        <p className="text-white/60 leading-relaxed">{feature.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Card3D>
               ))}
             </div>
           </div>
