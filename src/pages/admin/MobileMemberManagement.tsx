@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +42,13 @@ import {
   Phone,
   MapPin,
   Calendar as CalendarIcon,
+  Key,
+  CreditCard,
+  Activity,
+  DollarSign,
+  Users,
+  FileText,
+  AlertCircle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Loading } from '@/components/ui/loading';
@@ -53,10 +62,15 @@ const MobileMemberManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [membershipTypeFilter, setMembershipTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateRangeFilter, setDateRangeFilter] = useState({ from: '', to: '' });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [bulkImportFile, setBulkImportFile] = useState<File | null>(null);
+  const [bulkImportData, setBulkImportData] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -76,7 +90,7 @@ const MobileMemberManagement = () => {
 
   // Fetch members with filters
   const { data: members = [], isLoading } = useQuery({
-    queryKey: ['mobile-members', searchTerm, membershipTypeFilter, statusFilter],
+    queryKey: ['mobile-members', searchTerm, membershipTypeFilter, statusFilter, dateRangeFilter],
     queryFn: async () => {
       let query = supabase
         .from('members')
@@ -85,7 +99,7 @@ const MobileMemberManagement = () => {
 
       if (searchTerm) {
         query = query.or(
-          `full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`
+          `full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`
         );
       }
 
@@ -95,6 +109,14 @@ const MobileMemberManagement = () => {
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
+      }
+
+      if (dateRangeFilter.from) {
+        query = query.gte('created_at', dateRangeFilter.from);
+      }
+
+      if (dateRangeFilter.to) {
+        query = query.lte('created_at', dateRangeFilter.to);
       }
 
       const { data, error } = await query;
@@ -118,6 +140,49 @@ const MobileMemberManagement = () => {
 
       return { totalCount, activeCount };
     },
+  });
+
+  // Fetch member activity history
+  const { data: memberActivity } = useQuery({
+    queryKey: ['member-activity', selectedMember?.id],
+    queryFn: async () => {
+      if (!selectedMember?.id) return null;
+
+      // Fetch event attendance
+      const { data: eventAttendance } = await supabase
+        .from('event_attendance')
+        .select(`
+          *,
+          events (title, date, location)
+        `)
+        .eq('member_id', selectedMember.id)
+        .order('events(date)', { ascending: false });
+
+      // Fetch donations
+      const { data: donations } = await supabase
+        .from('donations')
+        .select('*')
+        .eq('donor_email', selectedMember.email)
+        .order('created_at', { ascending: false });
+
+      // Fetch distribution history
+      const { data: distributions } = await supabase
+        .from('distribution_records')
+        .select(`
+          *,
+          distribution_lists (list_name, item_types (name))
+        `)
+        .eq('member_id', selectedMember.id)
+        .eq('status', 'distributed')
+        .order('distributed_at', { ascending: false });
+
+      return {
+        eventAttendance: eventAttendance || [],
+        donations: donations || [],
+        distributions: distributions || [],
+      };
+    },
+    enabled: !!selectedMember?.id && isDetailDialogOpen,
   });
 
   const generateMemberId = async (membershipType: string) => {
@@ -245,9 +310,133 @@ const MobileMemberManagement = () => {
     },
   });
 
+  // Password reset mutation
+  const passwordResetMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: '✓ Password Reset Email Sent',
+        description: 'Member will receive instructions to reset their password',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Bulk import mutation
+  const bulkImportMutation = useMutation({
+    mutationFn: async (importData: any[]) => {
+      const results = {
+        success: 0,
+        failed: 0,
+        errors: [] as string[],
+      };
+
+      for (const row of importData) {
+        try {
+          // Validate required fields
+          if (!row.full_name || !row.email || !row.phone || !row.membership_type) {
+            results.failed++;
+            results.errors.push(`Row missing required fields: ${row.full_name || 'Unknown'}`);
+            continue;
+          }
+
+          // Check if email already exists
+          const { data: existingMember } = await supabase
+            .from('members')
+            .select('id')
+            .eq('email', row.email)
+            .single();
+
+          if (existingMember) {
+            results.failed++;
+            results.errors.push(`Email already exists: ${row.email}`);
+            continue;
+          }
+
+          // Generate member ID
+          const memberId = await generateMemberId(row.membership_type);
+
+          // Insert member
+          const { error } = await supabase.from('members').insert([
+            {
+              id: memberId,
+              full_name: row.full_name,
+              email: row.email,
+              phone: row.phone,
+              membership_type: row.membership_type,
+              status: row.status || 'active',
+              date_of_birth: row.date_of_birth || null,
+              gender: row.gender || 'male',
+              address: row.address || '',
+              city: row.city || '',
+              state: row.state || '',
+              postal_code: row.postal_code || '',
+              country: row.country || 'India',
+              photo_url: '/placeholder.svg',
+              emergency_contact: {},
+            },
+          ]);
+
+          if (error) {
+            results.failed++;
+            results.errors.push(`Failed to import ${row.full_name}: ${error.message}`);
+          } else {
+            results.success++;
+          }
+        } catch (err: any) {
+          results.failed++;
+          results.errors.push(`Unexpected error for ${row.full_name}: ${err.message}`);
+        }
+      }
+
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ['mobile-members'] });
+      queryClient.invalidateQueries({ queryKey: ['mobile-member-stats'] });
+
+      toast({
+        title: '✓ Bulk Import Complete',
+        description: `Successfully imported ${results.success} members. ${results.failed} failed.`,
+      });
+
+      if (results.errors.length > 0) {
+        console.error('Import errors:', results.errors);
+      }
+
+      setIsBulkImportDialogOpen(false);
+      setBulkImportFile(null);
+      setBulkImportData([]);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleDeleteMember = (memberId: string, memberName: string) => {
     if (confirm(`Delete ${memberName}? This action cannot be undone.`)) {
       deleteMemberMutation.mutate(memberId);
+    }
+  };
+
+  const handlePasswordReset = (email: string, memberName: string) => {
+    if (confirm(`Send password reset email to ${memberName}?`)) {
+      passwordResetMutation.mutate(email);
     }
   };
 
@@ -268,6 +457,11 @@ const MobileMemberManagement = () => {
       country: member.country || 'India',
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openDetailDialog = (member: any) => {
+    setSelectedMember(member);
+    setIsDetailDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -309,6 +503,133 @@ const MobileMemberManagement = () => {
     a.href = url;
     a.download = `members_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBulkImportFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+
+      if (lines.length < 2) {
+        toast({
+          title: 'Error',
+          description: 'CSV file must contain header row and at least one data row',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const data = lines.slice(1).map(line => {
+        const values = line.split(',');
+        const row: any = {};
+        headers.forEach((header, index) => {
+          row[header.replace(/\s+/g, '_')] = values[index]?.trim() || '';
+        });
+        return row;
+      });
+
+      setBulkImportData(data);
+      toast({
+        title: '✓ File Parsed',
+        description: `Ready to import ${data.length} members`,
+      });
+    };
+
+    reader.readAsText(file);
+  };
+
+  const downloadTemplate = () => {
+    const template = [
+      ['full_name', 'email', 'phone', 'membership_type', 'status', 'date_of_birth', 'gender', 'address', 'city', 'state'],
+      ['John Doe', 'john@example.com', '+919876543210', 'Karyakarta', 'active', '1990-01-01', 'male', '123 Main St', 'Bangalore', 'Karnataka'],
+    ]
+      .map((row) => row.join(','))
+      .join('\n');
+
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'member_import_template.csv';
+    a.click();
+  };
+
+  const downloadMemberIdCard = (member: any) => {
+    // Create a simple ID card HTML
+    const cardHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+          .id-card {
+            width: 350px;
+            height: 220px;
+            border: 2px solid #00A36C;
+            border-radius: 10px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1C1C1C 0%, #2A2A2A 100%);
+            color: white;
+          }
+          .header { text-align: center; margin-bottom: 15px; }
+          .header h2 { margin: 0; color: #00A36C; font-size: 18px; }
+          .content { display: flex; gap: 15px; }
+          .photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00A36C, #B8860B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+          }
+          .info { flex: 1; }
+          .info div { margin: 5px 0; font-size: 12px; }
+          .name { font-size: 16px; font-weight: bold; color: #00A36C; }
+          .id { font-size: 14px; color: #B8860B; font-family: monospace; }
+        </style>
+      </head>
+      <body>
+        <div class="id-card">
+          <div class="header">
+            <h2>MAHAVEER BHAVAN</h2>
+            <div style="font-size: 10px; color: #999;">Digital Member ID Card</div>
+          </div>
+          <div class="content">
+            <div class="photo">${member.full_name?.charAt(0)?.toUpperCase() || '?'}</div>
+            <div class="info">
+              <div class="name">${member.full_name}</div>
+              <div class="id">ID: ${member.id}</div>
+              <div>${member.membership_type}</div>
+              <div>${member.email}</div>
+              <div>${member.phone}</div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([cardHtml], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ID_Card_${member.id}.html`;
+    a.click();
+
+    toast({
+      title: '✓ ID Card Downloaded',
+      description: 'Open the HTML file in a browser to view or print',
+    });
   };
 
   const getMembershipBadge = (type: string) => {
@@ -373,7 +694,7 @@ const MobileMemberManagement = () => {
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search by name, email, or ID..."
+            placeholder="Search by name, email, phone, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-[#252525] border-white/10 text-white placeholder:text-gray-500"
@@ -390,14 +711,14 @@ const MobileMemberManagement = () => {
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
-                {(membershipTypeFilter !== 'all' || statusFilter !== 'all') && (
+                {(membershipTypeFilter !== 'all' || statusFilter !== 'all' || dateRangeFilter.from || dateRangeFilter.to) && (
                   <Badge className="ml-2 h-4 bg-[#00A36C] border-0">•</Badge>
                 )}
               </Button>
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="bg-[#1C1C1C] border-white/10 max-h-[80vh]"
+              className="bg-[#1C1C1C] border-white/10 max-h-[80vh] overflow-y-auto"
             >
               <SheetHeader>
                 <SheetTitle className="text-white">Filter Members</SheetTitle>
@@ -433,6 +754,25 @@ const MobileMemberManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Registration Date Range</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="date"
+                      value={dateRangeFilter.from}
+                      onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, from: e.target.value })}
+                      className="bg-[#252525] border-white/10 text-white"
+                      placeholder="From"
+                    />
+                    <Input
+                      type="date"
+                      value={dateRangeFilter.to}
+                      onChange={(e) => setDateRangeFilter({ ...dateRangeFilter, to: e.target.value })}
+                      className="bg-[#252525] border-white/10 text-white"
+                      placeholder="To"
+                    />
+                  </div>
+                </div>
                 <div className="flex gap-2 pt-2">
                   <Button
                     variant="outline"
@@ -440,6 +780,7 @@ const MobileMemberManagement = () => {
                     onClick={() => {
                       setMembershipTypeFilter('all');
                       setStatusFilter('all');
+                      setDateRangeFilter({ from: '', to: '' });
                     }}
                   >
                     Clear Filters
@@ -461,6 +802,14 @@ const MobileMemberManagement = () => {
             className="bg-[#252525] border-white/10 text-white"
           >
             <Download className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setIsBulkImportDialogOpen(true)}
+            className="bg-[#252525] border-white/10 text-white"
+          >
+            <Upload className="h-4 w-4" />
           </Button>
 
           <Button
@@ -545,12 +894,21 @@ const MobileMemberManagement = () => {
                           </div>
 
                           {/* Actions */}
-                          <div className="flex gap-2 mt-3">
+                          <div className="grid grid-cols-3 gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openDetailDialog(member)}
+                              className="h-8 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => openEditDialog(member)}
-                              className="flex-1 h-8 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                              className="h-8 bg-white/5 border-white/10 text-white hover:bg-white/10"
                             >
                               <Edit className="h-3 w-3 mr-1" />
                               Edit
@@ -574,6 +932,341 @@ const MobileMemberManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Member Detail Dialog with Tabs */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-hidden bg-[#1C1C1C] border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Member Details</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {selectedMember?.full_name} - {selectedMember?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-[#252525]">
+              <TabsTrigger value="profile" className="text-white data-[state=active]:bg-[#00A36C]">
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="text-white data-[state=active]:bg-[#00A36C]">
+                Activity
+              </TabsTrigger>
+              <TabsTrigger value="id-card" className="text-white data-[state=active]:bg-[#00A36C]">
+                ID Card
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="max-h-[60vh] overflow-y-auto mt-4">
+              {/* Profile Tab */}
+              <TabsContent value="profile" className="space-y-4">
+                <div className="text-center">
+                  <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00A36C] to-[#B8860B] flex items-center justify-center text-white font-bold text-4xl mb-4">
+                    {selectedMember?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{selectedMember?.full_name}</h3>
+                  <p className="text-gray-400 font-mono">{selectedMember?.id}</p>
+                  <div className="flex gap-2 justify-center mt-2">
+                    {selectedMember && getMembershipBadge(selectedMember.membership_type)}
+                    {selectedMember && getStatusBadge(selectedMember.status)}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="bg-[#252525] p-3 rounded-lg">
+                    <div className="text-xs text-gray-400 mb-1">Email</div>
+                    <div className="text-white flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      {selectedMember?.email}
+                    </div>
+                  </div>
+                  <div className="bg-[#252525] p-3 rounded-lg">
+                    <div className="text-xs text-gray-400 mb-1">Phone</div>
+                    <div className="text-white flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      {selectedMember?.phone}
+                    </div>
+                  </div>
+                  <div className="bg-[#252525] p-3 rounded-lg">
+                    <div className="text-xs text-gray-400 mb-1">Address</div>
+                    <div className="text-white flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {selectedMember?.address}, {selectedMember?.city}, {selectedMember?.state}
+                    </div>
+                  </div>
+                  <div className="bg-[#252525] p-3 rounded-lg">
+                    <div className="text-xs text-gray-400 mb-1">Date of Birth</div>
+                    <div className="text-white">
+                      {selectedMember?.date_of_birth
+                        ? format(new Date(selectedMember.date_of_birth), 'MMMM dd, yyyy')
+                        : 'Not specified'}
+                    </div>
+                  </div>
+                  <div className="bg-[#252525] p-3 rounded-lg">
+                    <div className="text-xs text-gray-400 mb-1">Member Since</div>
+                    <div className="text-white">
+                      {selectedMember?.created_at && format(new Date(selectedMember.created_at), 'MMMM dd, yyyy')}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-[#252525] border-white/10 text-white"
+                    onClick={() => selectedMember && handlePasswordReset(selectedMember.email, selectedMember.full_name)}
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Reset Password
+                  </Button>
+                  <Button
+                    className="flex-1 bg-[#00A36C] hover:bg-[#00A36C]/90"
+                    onClick={() => {
+                      setIsDetailDialogOpen(false);
+                      openEditDialog(selectedMember);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Activity History Tab */}
+              <TabsContent value="activity" className="space-y-4">
+                {memberActivity ? (
+                  <>
+                    {/* Event Attendance */}
+                    <div>
+                      <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-[#00A36C]" />
+                        Event Attendance ({memberActivity.eventAttendance.length})
+                      </h4>
+                      {memberActivity.eventAttendance.length === 0 ? (
+                        <div className="bg-[#252525] p-4 rounded-lg text-center text-gray-400 text-sm">
+                          No event attendance recorded
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {memberActivity.eventAttendance.slice(0, 5).map((attendance: any) => (
+                            <div key={attendance.id} className="bg-[#252525] p-3 rounded-lg">
+                              <div className="text-white font-medium">{attendance.events?.title}</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {attendance.events?.date && format(new Date(attendance.events.date), 'MMM dd, yyyy')} · {attendance.events?.location}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Donations */}
+                    <div>
+                      <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-[#B8860B]" />
+                        Donations ({memberActivity.donations.length})
+                      </h4>
+                      {memberActivity.donations.length === 0 ? (
+                        <div className="bg-[#252525] p-4 rounded-lg text-center text-gray-400 text-sm">
+                          No donations recorded
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {memberActivity.donations.slice(0, 5).map((donation: any) => (
+                            <div key={donation.id} className="bg-[#252525] p-3 rounded-lg flex justify-between items-center">
+                              <div>
+                                <div className="text-white font-medium">₹{donation.amount.toLocaleString()}</div>
+                                <div className="text-xs text-gray-400 mt-1">
+                                  {format(new Date(donation.created_at), 'MMM dd, yyyy')}
+                                </div>
+                              </div>
+                              <Badge className={donation.status === 'completed' ? 'bg-[#00A36C]' : 'bg-gray-500'}>
+                                {donation.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Distribution History */}
+                    <div>
+                      <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-blue-400" />
+                        Items Collected ({memberActivity.distributions.length})
+                      </h4>
+                      {memberActivity.distributions.length === 0 ? (
+                        <div className="bg-[#252525] p-4 rounded-lg text-center text-gray-400 text-sm">
+                          No items collected
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {memberActivity.distributions.slice(0, 5).map((dist: any) => (
+                            <div key={dist.id} className="bg-[#252525] p-3 rounded-lg">
+                              <div className="text-white font-medium">{dist.distribution_lists?.item_types?.name}</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {dist.distribution_lists?.list_name} · {dist.distributed_at && format(new Date(dist.distributed_at), 'MMM dd, yyyy h:mm a')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-center items-center py-12">
+                    <Loading />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ID Card Tab */}
+              <TabsContent value="id-card" className="space-y-4">
+                <div className="bg-gradient-to-br from-[#252525] to-[#1C1C1C] border-2 border-[#00A36C] rounded-lg p-6">
+                  <div className="text-center mb-4">
+                    <h3 className="text-[#00A36C] font-bold text-lg">MAHAVEER BHAVAN</h3>
+                    <p className="text-xs text-gray-400">Digital Member ID Card</p>
+                  </div>
+
+                  <div className="flex gap-4 items-center">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#00A36C] to-[#B8860B] flex items-center justify-center text-white font-bold text-3xl flex-shrink-0">
+                      {selectedMember?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white font-bold text-lg">{selectedMember?.full_name}</div>
+                      <div className="text-[#B8860B] font-mono text-sm">{selectedMember?.id}</div>
+                      <div className="text-gray-400 text-sm mt-1">{selectedMember?.membership_type}</div>
+                      <div className="text-gray-400 text-xs mt-1">{selectedMember?.email}</div>
+                      <div className="text-gray-400 text-xs">{selectedMember?.phone}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#252525] p-4 rounded-lg">
+                  <div className="flex items-start gap-2 text-sm text-gray-400">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <p>
+                      This digital ID card can be downloaded as an HTML file.
+                      Open it in a browser to view or print a physical copy for the member.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-[#252525] border-white/10 text-white"
+                    onClick={() => selectedMember && downloadMemberIdCard(selectedMember)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download ID Card
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-[#252525] border-white/10 text-white"
+                    onClick={() => {
+                      // Generate QR code would go here
+                      toast({
+                        title: 'QR Code',
+                        description: 'QR code generation feature coming soon',
+                      });
+                    }}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    View QR Code
+                  </Button>
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Import Dialog */}
+      <Dialog open={isBulkImportDialogOpen} onOpenChange={setIsBulkImportDialogOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[85vh] overflow-y-auto bg-[#1C1C1C] border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Bulk Import Members</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Import multiple members from a CSV file
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-400">
+                  <p className="font-semibold mb-1">CSV Format Requirements:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Required columns: full_name, email, phone, membership_type</li>
+                    <li>Optional columns: status, date_of_birth, gender, address, city, state</li>
+                    <li>Membership types: Trustee, Tapasvi, Karyakarta, Labharti, Extra</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300">Upload CSV File</Label>
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                className="bg-[#252525] border-white/10 text-white"
+              />
+              {bulkImportFile && (
+                <div className="text-sm text-gray-400 mt-2">
+                  File: {bulkImportFile.name} ({bulkImportData.length} rows)
+                </div>
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={downloadTemplate}
+              className="w-full bg-[#252525] border-white/10 text-white"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV Template
+            </Button>
+
+            {bulkImportData.length > 0 && (
+              <div className="bg-[#252525] p-4 rounded-lg max-h-[200px] overflow-y-auto">
+                <div className="text-sm text-white font-semibold mb-2">Preview (first 3 rows):</div>
+                <div className="space-y-2">
+                  {bulkImportData.slice(0, 3).map((row, index) => (
+                    <div key={index} className="text-xs text-gray-400 border-b border-white/10 pb-2">
+                      <div>{row.full_name} - {row.email}</div>
+                      <div>{row.phone} - {row.membership_type}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsBulkImportDialogOpen(false);
+                setBulkImportFile(null);
+                setBulkImportData([]);
+              }}
+              className="bg-[#252525] border-white/10 text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => bulkImportMutation.mutate(bulkImportData)}
+              disabled={bulkImportMutation.isPending || bulkImportData.length === 0}
+              className="bg-[#00A36C] hover:bg-[#00A36C]/90"
+            >
+              {bulkImportMutation.isPending ? 'Importing...' : `Import ${bulkImportData.length} Members`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Member Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
