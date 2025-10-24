@@ -2,40 +2,42 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Users, Calendar, Image, MessageSquare, Award, Shield } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const features = [
     {
       icon: Users,
-      title: 'Member Management',
-      description: 'Comprehensive member profiles and community management'
+      title: t('landing.memberManagement'),
+      description: t('landing.memberManagementDesc')
     },
     {
       icon: Calendar,
-      title: 'Events & Trips',
-      description: 'Organize trips, events, upvas, and community gatherings'
+      title: t('landing.eventsTrips'),
+      description: t('landing.eventsTripsDesc')
     },
     {
       icon: Image,
-      title: 'Gallery & Media',
-      description: 'Share photos and memories from community events'
+      title: t('landing.galleryMedia'),
+      description: t('landing.galleryMediaDesc')
     },
     {
       icon: MessageSquare,
-      title: 'Communication',
-      description: 'Stay connected with announcements and messaging'
+      title: t('landing.communication'),
+      description: t('landing.communicationDesc')
     },
     {
       icon: Award,
-      title: 'Attendance Tracking',
-      description: 'Track kit distribution and member participation'
+      title: t('landing.attendance'),
+      description: t('landing.attendanceDesc')
     },
     {
       icon: Shield,
-      title: 'Secure & Reliable',
-      description: 'Your data is safe with role-based access control'
+      title: t('landing.secure'),
+      description: t('landing.secureDesc')
     }
   ];
 
@@ -56,13 +58,13 @@ const Landing = () => {
               onClick={() => navigate('/auth')}
               className="text-white/90 hover:text-white hover:bg-white/10 rounded-xl transition-all"
             >
-              Login
+              {t('landing.login')}
             </Button>
             <Button 
               onClick={() => navigate('/auth')}
               className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl shadow-lg shadow-orange-500/30 transition-all hover:shadow-orange-500/50"
             >
-              Get Started
+              {t('landing.getStarted')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -81,13 +83,13 @@ const Landing = () => {
           <div className="flex flex-col items-center text-center space-y-8">
             <div className="space-y-6 max-w-4xl">
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
-                Welcome to{' '}
+                {t('landing.title').split('Mahaveer Bhavan')[0]}
                 <span className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent">
                   Mahaveer Bhavan
                 </span>
               </h1>
               <p className="text-xl md:text-2xl text-white/70 leading-relaxed">
-                A complete community management platform for spiritual organizations
+                {t('landing.subtitle')}
               </p>
             </div>
 
@@ -97,7 +99,7 @@ const Landing = () => {
                 onClick={() => navigate('/auth')} 
                 className="text-lg px-10 py-6 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-2xl shadow-2xl shadow-orange-500/40 transition-all hover:scale-105"
               >
-                Member Login
+                {t('landing.memberLogin')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
@@ -106,7 +108,7 @@ const Landing = () => {
                 onClick={() => navigate('/admin/auth')} 
                 className="text-lg px-10 py-6 border-2 border-white/20 bg-white/5 hover:bg-white/10 text-white rounded-2xl backdrop-blur transition-all hover:scale-105"
               >
-                Admin Access
+                {t('landing.adminAccess')}
               </Button>
             </div>
 
@@ -115,19 +117,19 @@ const Landing = () => {
               <Card className="bg-white/5 border-white/10 backdrop-blur-xl hover:bg-white/10 transition-all">
                 <CardContent className="pt-8 pb-8 text-center">
                   <div className="text-5xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">500+</div>
-                  <div className="text-sm text-white/60 mt-2 font-medium">Active Members</div>
+                  <div className="text-sm text-white/60 mt-2 font-medium">{t('landing.activeMembers')}</div>
                 </CardContent>
               </Card>
               <Card className="bg-white/5 border-white/10 backdrop-blur-xl hover:bg-white/10 transition-all">
                 <CardContent className="pt-8 pb-8 text-center">
                   <div className="text-5xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">50+</div>
-                  <div className="text-sm text-white/60 mt-2 font-medium">Events Organized</div>
+                  <div className="text-sm text-white/60 mt-2 font-medium">{t('landing.eventsOrganized')}</div>
                 </CardContent>
               </Card>
               <Card className="bg-white/5 border-white/10 backdrop-blur-xl hover:bg-white/10 transition-all">
                 <CardContent className="pt-8 pb-8 text-center">
                   <div className="text-5xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">100%</div>
-                  <div className="text-sm text-white/60 mt-2 font-medium">Digital Experience</div>
+                  <div className="text-sm text-white/60 mt-2 font-medium">{t('landing.digitalExperience')}</div>
                 </CardContent>
               </Card>
             </div>
@@ -141,10 +143,10 @@ const Landing = () => {
           <div className="space-y-12">
             <div className="text-center space-y-4">
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-                Everything You Need
+                {t('landing.everythingYouNeed')}
               </h2>
               <p className="text-xl text-white/70 max-w-2xl mx-auto">
-                Powerful features to manage your spiritual community efficiently
+                {t('landing.featuresSubtitle')}
               </p>
             </div>
 
@@ -183,10 +185,10 @@ const Landing = () => {
               <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                 <div className="space-y-3 text-center md:text-left">
                   <h2 className="text-3xl md:text-4xl font-bold text-white">
-                    Ready to Join Our Community?
+                    {t('landing.readyToJoin')}
                   </h2>
                   <p className="text-white/90 text-lg leading-relaxed">
-                    Connect with fellow members and stay updated with all activities
+                    {t('landing.readyToJoinDesc')}
                   </p>
                 </div>
                 <Button
@@ -195,7 +197,7 @@ const Landing = () => {
                   onClick={() => navigate('/auth')}
                   className="text-lg px-10 py-6 bg-white text-red-600 hover:bg-white/90 rounded-2xl shadow-xl whitespace-nowrap font-semibold hover:scale-105 transition-all"
                 >
-                  Get Started Today
+                  {t('landing.getStartedToday')}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
@@ -215,7 +217,7 @@ const Landing = () => {
               <span className="font-semibold text-lg">Mahaveer Bhavan</span>
             </div>
             <p className="text-sm text-white/50">
-              © 2025 Mahaveer Bhavan. All rights reserved.
+              © 2025 Mahaveer Bhavan. {t('landing.allRightsReserved')}
             </p>
           </div>
         </div>
