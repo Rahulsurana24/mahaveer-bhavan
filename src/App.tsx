@@ -16,7 +16,7 @@ import AdminAuth from "./pages/auth/AdminAuth";
 import Events from "./pages/Events";
 import Messaging from "./pages/Messaging";
 import Donations from "./pages/Donations";
-import Gallery from "./pages/Gallery";
+import GalleryNew from "./pages/GalleryNew";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import IDCardPage from "./pages/IDCard";
@@ -87,7 +87,7 @@ const App = () => (
               } />
               <Route path="/gallery" element={
                 <ProtectedRoute>
-                  <Gallery />
+                  <GalleryNew />
                 </ProtectedRoute>
               } />
               <Route path="/notifications" element={
