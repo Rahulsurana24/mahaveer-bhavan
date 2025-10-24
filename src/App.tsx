@@ -20,6 +20,7 @@ import MessagingEnhanced from "./pages/MessagingEnhanced";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import CreatePost from "./pages/CreatePost";
+import Feed from "./pages/Feed";
 import Donations from "./pages/Donations";
 import GalleryNew from "./pages/GalleryNew";
 import Notifications from "./pages/Notifications";
@@ -95,6 +96,11 @@ const App = () => (
               <Route path="/create-post" element={
                 <ProtectedRoute>
                   <CreatePost />
+                </ProtectedRoute>
+              } />
+              <Route path="/feed" element={
+                <ProtectedRoute>
+                  <Feed />
                 </ProtectedRoute>
               } />
               <Route path="/donations" element={
