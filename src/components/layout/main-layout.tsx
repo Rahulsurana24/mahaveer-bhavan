@@ -10,18 +10,19 @@ interface MainLayoutProps {
   showFooter?: boolean;
 }
 
-const MainLayout = ({ 
-  children, 
-  title, 
-  showBottomNav = true, 
-  showFooter = false 
+const MainLayout = ({
+  children,
+  title,
+  showBottomNav = true,
+  showFooter = false
 }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Header title={title} />
       <main className={cn(
         "flex-1 overflow-auto",
-        showBottomNav && "pb-16"
+        "pt-16", // Header height
+        showBottomNav && "pb-24" // Bottom nav height
       )}>
         {children}
       </main>
