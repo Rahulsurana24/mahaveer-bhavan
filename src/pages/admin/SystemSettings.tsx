@@ -9,7 +9,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
-import { Building, Mail, MessageSquare, CreditCard, Save, Shield } from "lucide-react";
+import { Building, Mail, MessageSquare, CreditCard, Save, Shield, ShieldCheck, ShieldOff, Key, AlertCircle } from "lucide-react";
+import { TwoFactorSetup } from "@/components/admin/TwoFactorSetup";
+import { Badge } from "@/components/ui/badge";
 
 const SystemSettings = () => {
   const { toast } = useToast();
@@ -134,11 +136,12 @@ const SystemSettings = () => {
         </div>
 
         <Tabs defaultValue="organization">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="organization"><Building className="h-4 w-4 mr-2" />Organization</TabsTrigger>
             <TabsTrigger value="email"><Mail className="h-4 w-4 mr-2" />Email</TabsTrigger>
             <TabsTrigger value="whatsapp"><MessageSquare className="h-4 w-4 mr-2" />WhatsApp</TabsTrigger>
             <TabsTrigger value="payment"><CreditCard className="h-4 w-4 mr-2" />Payment</TabsTrigger>
+            <TabsTrigger value="security"><Shield className="h-4 w-4 mr-2" />Security</TabsTrigger>
           </TabsList>
 
           <TabsContent value="organization">
@@ -244,9 +247,226 @@ const SystemSettings = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="security">
+            <SecuritySettings />
+          </TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
+  );
+};
+
+// Security Settings Component
+const SecuritySettings = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showSetup, setShowSetup] = useState(false);
+  const [show2FAInfo, setShow2FAInfo] = useState(false);
+
+  // Fetch current user's 2FA status
+  const { data: twoFactorStatus, isLoading } = useQuery({
+    queryKey: ['2fa-status'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('admin_two_factor')
+        .select('is_enabled, enabled_at, last_verified_at, backup_codes_used')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
+  });
+
+  // Disable 2FA mutation
+  const disable2FAMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('admin_two_factor')
+        .update({ 
+          is_enabled: false,
+          disabled_at: new Date().toISOString(),
+          disabled_by: user.id
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await supabase.rpc('log_2fa_action', {
+        p_user_id: user.id,
+        p_action: 'disabled'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['2fa-status'] });
+      toast({
+        title: 'Two-Factor Authentication Disabled',
+        description: 'Your account is no longer protected by 2FA'
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleDisable2FA = () => {
+    if (confirm('Are you sure you want to disable Two-Factor Authentication? This will make your account less secure.')) {
+      disable2FAMutation.mutate();
+    }
+  };
+
+  if (isLoading) {
+    return <Loading size="lg" text="Loading security settings..." />;
+  }
+
+  const is2FAEnabled = twoFactorStatus?.is_enabled;
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Security</CardTitle>
+          <CardDescription>Manage two-factor authentication and security settings</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* 2FA Status Card */}
+          <div className={`border rounded-lg p-4 ${is2FAEnabled ? 'bg-green-500/5 border-green-500/20' : 'bg-yellow-500/5 border-yellow-500/20'}`}>
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                {is2FAEnabled ? (
+                  <ShieldCheck className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <ShieldOff className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold">Two-Factor Authentication</h3>
+                    <Badge variant={is2FAEnabled ? 'default' : 'secondary'} className={is2FAEnabled ? 'bg-green-500' : ''}>
+                      {is2FAEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {is2FAEnabled 
+                      ? 'Your account is protected with an additional security layer'
+                      : 'Add an extra layer of security to your account by requiring a verification code'
+                    }
+                  </p>
+                  {is2FAEnabled && twoFactorStatus?.enabled_at && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Enabled on {new Date(twoFactorStatus.enabled_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2FA Actions */}
+          <div className="space-y-4">
+            {!is2FAEnabled ? (
+              <>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-400">
+                      <p className="font-semibold mb-1">Recommended Security Enhancement</p>
+                      <p>
+                        Two-Factor Authentication (2FA) significantly improves account security by requiring
+                        both your password and a time-based code from your phone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={() => setShowSetup(true)} className="w-full">
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Enable Two-Factor Authentication
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <div className="text-muted-foreground mb-1">Last Verified</div>
+                    <div className="font-medium">
+                      {twoFactorStatus?.last_verified_at 
+                        ? new Date(twoFactorStatus.last_verified_at).toLocaleDateString()
+                        : 'Never'
+                      }
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <div className="text-muted-foreground mb-1">Backup Codes Used</div>
+                    <div className="font-medium">
+                      {twoFactorStatus?.backup_codes_used || 0} / 8
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setShow2FAInfo(true)}>
+                    <Key className="h-4 w-4 mr-2" />
+                    Regenerate Backup Codes
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    className="flex-1"
+                    onClick={handleDisable2FA}
+                    disabled={disable2FAMutation.isPending}
+                  >
+                    <ShieldOff className="h-4 w-4 mr-2" />
+                    {disable2FAMutation.isPending ? 'Disabling...' : 'Disable 2FA'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Information Section */}
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2 text-sm">How 2FA Works</h4>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              <li className="flex gap-2">
+                <span>1.</span>
+                <span>Download an authenticator app (Google Authenticator or Authy)</span>
+              </li>
+              <li className="flex gap-2">
+                <span>2.</span>
+                <span>Scan the QR code provided during setup</span>
+              </li>
+              <li className="flex gap-2">
+                <span>3.</span>
+                <span>Enter the 6-digit code when logging in</span>
+              </li>
+              <li className="flex gap-2">
+                <span>4.</span>
+                <span>Save backup codes in case you lose access to your device</span>
+              </li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2FA Setup Dialog */}
+      <TwoFactorSetup 
+        isOpen={showSetup}
+        onClose={() => setShowSetup(false)}
+        onSuccess={() => {
+          setShowSetup(false);
+          queryClient.invalidateQueries({ queryKey: ['2fa-status'] });
+        }}
+      />
+    </>
   );
 };
 
