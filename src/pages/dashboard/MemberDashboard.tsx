@@ -127,10 +127,10 @@ const MemberDashboard = () => {
 
   // Format member ID
   const formatMemberId = () => {
-    if (!memberProfile?.user_roles?.prefix || !memberProfile?.member_number) {
+    if (!memberProfile?.id) {
       return 'N/A';
     }
-    return `${memberProfile.user_roles.prefix}-${String(memberProfile.member_number).padStart(4, '0')}`;
+    return memberProfile.id;
   };
 
   // Get greeting based on time
@@ -216,7 +216,7 @@ const MemberDashboard = () => {
                   <ChevronRight className="h-5 w-5 text-white/60" />
                 </div>
                 <Badge className="bg-white/20 text-white border-none mb-2">
-                  {memberProfile?.user_roles?.name || 'Member'}
+                  {memberProfile?.membership_type || 'Member'}
                 </Badge>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-white/80">Member ID:</span>
