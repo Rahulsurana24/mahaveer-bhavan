@@ -9,11 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  MessageSquare, 
-  Mail, 
-  Phone, 
-  Send, 
+import {
+  Mail,
+  Phone,
+  Send,
   Calendar,
   Loader2,
   FileSpreadsheet
@@ -23,15 +22,6 @@ import { TemplateManager } from '@/components/admin/TemplateManager';
 import { RecipientSelector, RecipientFilter } from '@/components/admin/RecipientSelector';
 import { MessageLogsViewer } from '@/components/admin/MessageLogsViewer';
 import { BulkMessaging } from '@/components/admin/BulkMessaging';
-import { WhatsAppSessionManager } from '@/components/admin/WhatsAppSessionManager';
-import { WhatsAppStatusIndicator } from '@/components/admin/WhatsAppStatusIndicator';
-import {
-  checkWhatsAppStatus,
-  getMemberPhones,
-  sendBulkWhatsAppMessages,
-  getActiveWhatsAppSession,
-  createWhatsAppMessageLogs
-} from '@/utils/whatsapp';
 
 const CommunicationCenter = () => {
   const { toast } = useToast();
@@ -77,77 +67,14 @@ const CommunicationCenter = () => {
 
       if (logError) throw logError;
 
-      // Handle WhatsApp sending if whatsapp channel is selected
-      if (data.channels.includes('whatsapp') && !data.scheduledFor) {
-        // Check WhatsApp status
-        const whatsappStatus = await checkWhatsAppStatus();
-        if (!whatsappStatus.isReady) {
-          throw new Error('WhatsApp is not connected. Please connect in the WhatsApp Settings tab.');
-        }
-
-        // Get session ID
-        const sessionId = await getActiveWhatsAppSession();
-        if (!sessionId) {
-          throw new Error('WhatsApp session not found');
-        }
-
-        // Get member phones
-        const members = await getMemberPhones(data.recipientFilter);
-        if (members.length === 0) {
-          throw new Error('No members found with phone numbers for the selected filter');
-        }
-
-        // Get current user profile
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('auth_id', userData.user?.id)
-          .single();
-
-        // Create message logs
-        const messageIds = await createWhatsAppMessageLogs(
-          sessionId,
-          members.map(m => ({
-            phone: m.phone,
-            name: m.name,
-            memberId: m.id
-          })),
-          data.body,
-          profile?.id || ''
-        );
-
-        // Send messages via WhatsApp
-        const whatsappMessages = members.map((member, index) => ({
-          phone: member.phone,
-          message: data.body,
-          message_id: messageIds[index]
-        }));
-
-        const result = await sendBulkWhatsAppMessages(whatsappMessages);
-
-        if (result.failed > 0) {
-          console.warn(`${result.failed} WhatsApp messages failed to send`);
-        }
-
-        return {
-          ...data,
-          whatsappResult: result
-        };
-      }
-
       return data;
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['message-logs'] });
 
-      let description = scheduledDate
+      const description = scheduledDate
         ? 'Message scheduled successfully'
         : 'Message sent successfully';
-
-      // Add WhatsApp result info if applicable
-      if (result.whatsappResult) {
-        description += ` (WhatsApp: ${result.whatsappResult.sent} sent, ${result.whatsappResult.failed} failed)`;
-      }
 
       toast({
         title: 'Success',
@@ -287,7 +214,6 @@ const CommunicationCenter = () => {
             <p className="text-muted-foreground">Send multi-channel messages to members</p>
           </div>
           <div className="flex gap-2">
-            <WhatsAppStatusIndicator />
             <Button onClick={() => setIsBulkMessagingOpen(true)} variant="outline">
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               Bulk Messaging
@@ -300,7 +226,6 @@ const CommunicationCenter = () => {
             <TabsTrigger value="compose">Compose Message</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="history">Message History</TabsTrigger>
-            <TabsTrigger value="whatsapp">WhatsApp Settings</TabsTrigger>
           </TabsList>
 
           {/* Compose Message Tab */}
@@ -317,21 +242,6 @@ const CommunicationCenter = () => {
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">Select Channels</Label>
                       <div className="flex flex-wrap gap-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="channel-whatsapp"
-                            checked={selectedChannels.includes('whatsapp')}
-                            onCheckedChange={() => handleChannelToggle('whatsapp')}
-                          />
-                          <Label
-                            htmlFor="channel-whatsapp"
-                            className="flex items-center gap-2 cursor-pointer font-normal"
-                          >
-                            <MessageSquare className="h-4 w-4 text-green-500" />
-                            WhatsApp
-                          </Label>
-                        </div>
-
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="channel-email"
@@ -475,11 +385,6 @@ const CommunicationCenter = () => {
           {/* Message History Tab */}
           <TabsContent value="history" className="space-y-6">
             <MessageLogsViewer />
-          </TabsContent>
-
-          {/* WhatsApp Settings Tab */}
-          <TabsContent value="whatsapp" className="space-y-6">
-            <WhatsAppSessionManager />
           </TabsContent>
         </Tabs>
 
