@@ -44,13 +44,7 @@ const MemberDashboard = () => {
 
       const { data, error } = await supabase
         .from('members')
-        .select(`
-          *,
-          user_roles (
-            name,
-            prefix
-          )
-        `)
+        .select('*')
         .eq('auth_id', user.id)
         .single();
 
