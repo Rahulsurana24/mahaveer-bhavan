@@ -101,15 +101,14 @@ export function TripRegistrationDialog({
         }
       }
 
-      // Insert trip registration with custom field data
+      // Insert trip registration
       const { error } = await supabase
         .from('trip_registrations')
         .insert({
           trip_id: tripId,
           member_id: memberId,
           status: 'registered',
-          payment_status: 'pending',
-          custom_field_values: formData
+          payment_status: 'pending'
         });
 
       if (error) throw error;
