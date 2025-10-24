@@ -60,17 +60,27 @@ export const JainismChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Get OpenRouter API key from Supabase secrets
-      const { data: secrets } = await supabase
-        .from('vault')
-        .select('secret')
-        .eq('name', 'OPENROUTER_API_KEY')
-        .single();
+      // Get OpenRouter API key from Supabase secrets or environment variable
+      let apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
 
-      const apiKey = secrets?.secret || process.env.VITE_OPENROUTER_API_KEY;
+      // Try to get from Supabase vault if available
+      try {
+        const { data: secrets, error } = await supabase
+          .from('vault')
+          .select('secret')
+          .eq('name', 'OPENROUTER_API_KEY')
+          .single();
+
+        if (!error && secrets?.secret) {
+          apiKey = secrets.secret;
+        }
+      } catch (vaultError) {
+        // Vault not configured, use environment variable
+        console.log('Using environment variable for API key');
+      }
 
       if (!apiKey) {
-        throw new Error('OpenRouter API key not configured');
+        throw new Error('OpenRouter API key not configured. Please set VITE_OPENROUTER_API_KEY in environment variables.');
       }
 
       // Prepare context about Jainism and Varatisap
@@ -113,7 +123,8 @@ Keep responses concise (2-3 paragraphs max).`;
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to get AI response');
       }
 
       const data = await response.json();
@@ -134,8 +145,8 @@ Keep responses concise (2-3 paragraphs max).`;
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: language === 'hi'
-          ? 'क्षमा करें, मुझे प्रतिक्रिया देने में समस्या हुई। कृपया पुनः प्रयास करें।'
-          : 'Sorry, I encountered an issue. Please try again.',
+          ? `क्षमा करें, मुझे प्रतिक्रिया देने में समस्या हुई। ${error instanceof Error ? error.message : 'कृपया पुनः प्रयास करें।'}`
+          : `Sorry, I encountered an issue. ${error instanceof Error ? error.message : 'Please try again.'}`,
         timestamp: new Date()
       };
 
