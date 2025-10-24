@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +16,9 @@ import {
   Send,
   Calendar,
   Loader2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Bell,
+  Info
 } from "lucide-react";
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
 import { TemplateManager } from '@/components/admin/TemplateManager';
@@ -226,6 +229,7 @@ const CommunicationCenter = () => {
             <TabsTrigger value="compose">Compose Message</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="history">Message History</TabsTrigger>
+            <TabsTrigger value="push-config">Push Notifications</TabsTrigger>
           </TabsList>
 
           {/* Compose Message Tab */}
@@ -271,19 +275,79 @@ const CommunicationCenter = () => {
                             SMS
                           </Label>
                         </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="channel-whatsapp"
+                            checked={selectedChannels.includes('whatsapp')}
+                            onCheckedChange={() => handleChannelToggle('whatsapp')}
+                          />
+                          <Label
+                            htmlFor="channel-whatsapp"
+                            className="flex items-center gap-2 cursor-pointer font-normal"
+                          >
+                            <Send className="h-4 w-4 text-green-500" />
+                            WhatsApp
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="channel-push"
+                            checked={selectedChannels.includes('push')}
+                            onCheckedChange={() => handleChannelToggle('push')}
+                          />
+                          <Label
+                            htmlFor="channel-push"
+                            className="flex items-center gap-2 cursor-pointer font-normal"
+                          >
+                            <Bell className="h-4 w-4 text-purple-500" />
+                            Push Notification
+                          </Label>
+                        </div>
                       </div>
+
+                      {/* Channel-specific alerts */}
+                      {selectedChannels.includes('sms') && (
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            SMS messages are limited to 160 characters. Longer messages will be split into multiple parts.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {selectedChannels.includes('whatsapp') && (
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            WhatsApp supports rich formatting: *bold*, _italic_, ~strikethrough~. Use emojis for engaging messages.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {selectedChannels.includes('push') && (
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            Push notifications are limited to ~100 characters for optimal display. Keep messages concise and actionable.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
 
                     {/* Subject */}
-                    <div className="space-y-2">
-                      <Label htmlFor="subject">Subject {selectedChannels.includes('email') && '(Required for Email)'}</Label>
-                      <Input
-                        id="subject"
-                        placeholder="Enter message subject"
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                      />
-                    </div>
+                    {selectedChannels.includes('email') && (
+                      <div className="space-y-2">
+                        <Label htmlFor="subject">Subject (Required for Email)</Label>
+                        <Input
+                          id="subject"
+                          placeholder="Enter message subject"
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                        />
+                      </div>
+                    )}
 
                     {/* Message Body - Using Plain Textarea for simplicity */}
                     <div className="space-y-2">
@@ -297,6 +361,10 @@ const CommunicationCenter = () => {
                           onChange={(e) => setMessageBody(e.target.value)}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        {messageBody.length} characters
+                        {selectedChannels.includes('sms') && ` (${Math.ceil(messageBody.length / 160)} SMS)`}
+                      </p>
                     </div>
 
                     {/* Scheduling */}
@@ -385,6 +453,26 @@ const CommunicationCenter = () => {
           {/* Message History Tab */}
           <TabsContent value="history" className="space-y-6">
             <MessageLogsViewer />
+          </TabsContent>
+
+          {/* Push Notifications Tab */}
+          <TabsContent value="push-config" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Automated Push Notification Manager
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Configure automated push notifications triggered by system events
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  Push Notification configuration coming soon
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
