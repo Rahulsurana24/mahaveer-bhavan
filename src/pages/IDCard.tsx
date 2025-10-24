@@ -16,7 +16,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import QRCodeSVG from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const IDCardPage = () => {
   const { user } = useAuth();
