@@ -15,8 +15,6 @@ import Auth from "./pages/auth/Auth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Events from "./pages/Events";
-import Messaging from "./pages/Messaging";
-import MessagingEnhanced from "./pages/MessagingEnhanced";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import CreatePost from "./pages/CreatePost";
