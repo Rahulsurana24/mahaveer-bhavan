@@ -35,9 +35,11 @@ export const AdminLoginForm = () => {
 
   const onSubmit = async (data: AdminLoginFormData) => {
     try {
+      console.log('[AdminLogin] Attempting login for:', data.email);
       const { error } = await signIn(data.email, data.password);
       
       if (error) {
+        console.error('[AdminLogin] Sign in error:', error);
         toast({
           title: 'Admin Login Failed',
           description: error.message || 'Invalid admin credentials',
@@ -46,45 +48,75 @@ export const AdminLoginForm = () => {
         return;
       }
 
+      console.log('[AdminLogin] Authentication successful, fetching user profile...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('role_id, user_roles(name)')
-          .eq('auth_id', user.id)
-          .single();
-
-        if (profileError || !profile) {
-          await supabase.auth.signOut();
-          toast({
-            title: 'Access Denied',
-            description: 'Unable to verify admin credentials.',
-            variant: 'destructive'
-          });
-          return;
-        }
-
-        const roleName = (profile as any)?.user_roles?.name;
-        
-        if (!['admin', 'superadmin', 'management_admin', 'view_only_admin'].includes(roleName)) {
-          await supabase.auth.signOut();
-          toast({
-            title: 'Access Denied',
-            description: 'This login is for administrators only. Please use the Member Login.',
-            variant: 'destructive'
-          });
-          return;
-        }
+      
+      if (!user) {
+        console.error('[AdminLogin] No user returned after authentication');
+        await supabase.auth.signOut();
+        toast({
+          title: 'Access Denied',
+          description: 'Unable to retrieve user information.',
+          variant: 'destructive'
+        });
+        return;
       }
 
+      console.log('[AdminLogin] User ID:', user.id, '- Querying user_profiles...');
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role_id, user_roles(name)')
+        .eq('auth_id', user.id)
+        .single();
+
+      console.log('[AdminLogin] Profile query result:', { profile, profileError });
+
+      if (profileError) {
+        console.error('[AdminLogin] Profile error:', profileError);
+        await supabase.auth.signOut();
+        toast({
+          title: 'Access Denied',
+          description: `Database error: ${profileError.message}. Please contact support.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (!profile) {
+        console.error('[AdminLogin] No profile found for user');
+        await supabase.auth.signOut();
+        toast({
+          title: 'Access Denied',
+          description: 'No profile found. Please contact administrator.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const roleName = (profile as any)?.user_roles?.name;
+      console.log('[AdminLogin] User role:', roleName);
+      
+      if (!['admin', 'superadmin', 'management_admin', 'view_only_admin'].includes(roleName)) {
+        console.log('[AdminLogin] User does not have admin role');
+        await supabase.auth.signOut();
+        toast({
+          title: 'Access Denied',
+          description: 'This login is for administrators only. Please use the Member Login.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('[AdminLogin] Admin access granted');
       toast({
         title: 'Welcome Admin',
         description: 'Successfully authenticated.'
       });
     } catch (error: any) {
+      console.error('[AdminLogin] Unexpected error:', error);
       toast({
         title: 'Admin Login Failed',
-        description: 'An unexpected error occurred. Please try again.',
+        description: error.message || 'An unexpected error occurred. Please try again.',
         variant: 'destructive'
       });
     }
