@@ -144,7 +144,7 @@ const Profile = () => {
   if (loading) {
     return (
       <MainLayout title="Profile">
-        <div className="flex justify-center items-center min-h-[400px]">
+        <div className="flex justify-center items-center min-h-screen bg-black">
           <Loading size="lg" text="Loading profile..." />
         </div>
       </MainLayout>
@@ -154,11 +154,13 @@ const Profile = () => {
   if (error || !member) {
     return (
       <MainLayout title="Profile">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Failed to load profile. Please try again.</p>
-          </CardContent>
-        </Card>
+        <div className="flex justify-center items-center min-h-screen bg-black">
+          <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
+            <CardContent className="p-8 text-center">
+              <p className="text-white/60">Failed to load profile. Please try again.</p>
+            </CardContent>
+          </Card>
+        </div>
       </MainLayout>
     );
   }
