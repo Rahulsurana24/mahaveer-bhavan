@@ -37,3 +37,6 @@ supabase/.branches
 # Database migrations
 supabase/migrations/*.sql
 !supabase/migrations/.gitkeep
+
+# Local Netlify folder
+.netlify
