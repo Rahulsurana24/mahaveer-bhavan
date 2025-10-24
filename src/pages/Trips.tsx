@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import MobileLayout from '@/components/layout/MobileLayout';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Calendar, Users, DollarSign, Clock } from 'lucide-react';
+import { MapPin, Calendar, Users, DollarSign, Plane } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Loading } from '@/components/ui/loading';
+import { cn } from '@/lib/utils';
 
 const Trips = () => {
   const [trips, setTrips] = useState<any[]>([]);
@@ -67,140 +68,116 @@ const Trips = () => {
   };
 
   const TripCard = ({ trip, showRegisterButton = true }: { trip: any; showRegisterButton?: boolean }) => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex justify-between items-start">
+    <Card className="overflow-hidden">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex justify-between items-start gap-3">
           <div className="flex-1">
-            <CardTitle className="text-xl mb-2">{trip.title}</CardTitle>
-            <div className="flex items-center text-sm text-muted-foreground gap-2">
-              <MapPin className="h-4 w-4" />
-              <span>{trip.destination}</span>
+            <h3 className="font-semibold text-base text-gray-900 line-clamp-2">
+              {trip.title}
+            </h3>
+            <div className="flex items-center text-sm text-gray-600 gap-1 mt-1">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="line-clamp-1">{trip.destination}</span>
             </div>
           </div>
-          <Badge variant="secondary">{trip.status}</Badge>
+          <Badge variant="secondary" className="flex-shrink-0">{trip.status}</Badge>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground line-clamp-2">
+
+        <p className="text-sm text-gray-600 line-clamp-2">
           {trip.description}
         </p>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            <div>
-              <p className="font-medium">Dates</p>
-              <p className="text-muted-foreground">
-                {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
+            <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500">Dates</p>
+              <p className="text-xs font-medium text-gray-900 truncate">
+                {new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary" />
-            <div>
-              <p className="font-medium">Time</p>
-              <p className="text-muted-foreground">
-                {trip.departure_time}
-              </p>
+            <Users className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500">Capacity</p>
+              <p className="text-xs font-medium text-gray-900">{trip.capacity} seats</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-2 col-span-2">
+            <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
             <div>
-              <p className="font-medium">Capacity</p>
-              <p className="text-muted-foreground">{trip.capacity} seats</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <div>
-              <p className="font-medium">Price</p>
-              <p className="text-muted-foreground">₹{trip.price}</p>
+              <p className="text-xs text-gray-500">Price</p>
+              <p className="text-sm font-bold text-primary">₹{trip.price}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            className="flex-1"
-            onClick={() => navigate(`/trips/${trip.id}`)}
-          >
-            View Details
-          </Button>
-          {showRegisterButton && (
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/trips/${trip.id}/register`)}
-            >
-              Register
-            </Button>
-          )}
-        </div>
+        <Button
+          className="w-full"
+          onClick={() => navigate(`/trips/${trip.id}`)}
+          size="sm"
+        >
+          View Details
+        </Button>
       </CardContent>
     </Card>
   );
 
   if (loading) {
     return (
-      <MainLayout title="Trips">
+      <MobileLayout title="Trips">
         <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Loading size="lg" />
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
   return (
-    <MainLayout title="Trips & Tours">
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Trips & Tours</h1>
+    <MobileLayout title="Trips">
+      <div className="space-y-4">
+        {/* Tabs */}
+        <div className="flex gap-2 px-4 py-3 border-b">
+          {[
+            { value: "all", label: "All Trips" },
+            { value: "my-trips", label: "My Trips" }
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => {/* handle tab change */}}
+              className={cn(
+                "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                tab.value === "all"
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-        <Tabs defaultValue="all">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="all">All Trips</TabsTrigger>
-            <TabsTrigger value="my-trips">My Registered Trips</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-4 mt-6">
-            {trips.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">No upcoming trips available</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {trips.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="my-trips" className="space-y-4 mt-6">
-            {myTrips.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">You haven't registered for any trips yet</p>
-                  <Button className="mt-4" onClick={() => navigate('/trips')}>
-                    Browse Available Trips
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {myTrips.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} showRegisterButton={false} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        {/* Trips List */}
+        <div className="px-4 space-y-3 pb-4">
+          {trips.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Plane className="h-16 w-16 text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No trips available</h3>
+              <p className="text-sm text-gray-500 text-center">
+                Check back later for upcoming trips and tours
+              </p>
+            </div>
+          ) : (
+            trips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} />
+            ))
+          )}
+        </div>
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
