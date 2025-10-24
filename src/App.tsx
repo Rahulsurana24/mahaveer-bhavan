@@ -17,6 +17,9 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Events from "./pages/Events";
 import Messaging from "./pages/Messaging";
 import MessagingEnhanced from "./pages/MessagingEnhanced";
+import Messages from "./pages/Messages";
+import Chat from "./pages/Chat";
+import CreatePost from "./pages/CreatePost";
 import Donations from "./pages/Donations";
 import GalleryNew from "./pages/GalleryNew";
 import Notifications from "./pages/Notifications";
@@ -81,7 +84,17 @@ const App = () => (
               } />
               <Route path="/messages" element={
                 <ProtectedRoute>
-                  <MessagingEnhanced />
+                  <Messages />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat/:userId" element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } />
+              <Route path="/create-post" element={
+                <ProtectedRoute>
+                  <CreatePost />
                 </ProtectedRoute>
               } />
               <Route path="/donations" element={
