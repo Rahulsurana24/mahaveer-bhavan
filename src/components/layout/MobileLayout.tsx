@@ -30,9 +30,9 @@ const MobileLayout = ({
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+    <div className="flex flex-col h-screen bg-[#1C1C1C]">
+      {/* Premium Dark Header */}
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#252525] to-[#1C1C1C] border-b border-white/10 shadow-lg">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-3 flex-1">
             {showBack && (
@@ -40,13 +40,13 @@ const MobileLayout = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate(-1)}
-                className="h-9 w-9"
+                className="h-9 w-9 text-[#B8860B] hover:bg-white/5"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
             {title && (
-              <h1 className="text-lg font-semibold text-gray-900 truncate">
+              <h1 className="text-lg font-semibold text-white truncate">
                 {title}
               </h1>
             )}
@@ -54,13 +54,21 @@ const MobileLayout = ({
 
           <div className="flex items-center gap-2">
             {showSearch && (
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9 text-[#B8860B] hover:bg-white/5"
+              >
                 <Search className="h-5 w-5" />
               </Button>
             )}
             {headerRight}
             {showMenu && (
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9 text-[#B8860B] hover:bg-white/5"
+              >
                 <MoreVertical className="h-5 w-5" />
               </Button>
             )}
@@ -68,9 +76,9 @@ const MobileLayout = ({
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content with Dark Background */}
       <main className={cn(
-        "flex-1 overflow-y-auto",
+        "flex-1 overflow-y-auto bg-[#1C1C1C]",
         !hideBottomNav && "pb-16",
         className
       )}>
