@@ -373,7 +373,7 @@ const PasswordManagement = () => {
                   type="button"
                   variant="ghost"
                   className="w-full text-gray-400 hover:text-white hover:bg-white/10"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/member/dashboard')}
                 >
                   Cancel
                 </Button>
