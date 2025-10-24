@@ -17,32 +17,124 @@ DO $$ BEGIN RAISE NOTICE '🚀 Starting WhatsApp Messaging System Setup...'; END
 
 DO $$ BEGIN RAISE NOTICE '📦 Part 1/7: Creating core messaging tables...'; END $$;
 
--- Update existing messages table with multimedia support
-ALTER TABLE messages
-  ADD COLUMN IF NOT EXISTS message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'video', 'audio', 'document')),
-  ADD COLUMN IF NOT EXISTS media_url TEXT,
-  ADD COLUMN IF NOT EXISTS media_thumbnail_url TEXT,
-  ADD COLUMN IF NOT EXISTS media_duration_seconds INTEGER,
-  ADD COLUMN IF NOT EXISTS media_file_name TEXT,
-  ADD COLUMN IF NOT EXISTS media_file_size BIGINT,
-  ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
-  ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS group_id UUID;
-
--- Rename message_text to content if it exists
+-- Handle message_text to content column rename/creation carefully
 DO $$
+DECLARE
+  has_message_text BOOLEAN;
+  has_content BOOLEAN;
 BEGIN
-  IF EXISTS (
+  -- Check if message_text column exists
+  SELECT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'messages' AND column_name = 'message_text'
-  ) THEN
+  ) INTO has_message_text;
+
+  -- Check if content column exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'content'
+  ) INTO has_content;
+
+  -- Handle different scenarios
+  IF has_message_text AND NOT has_content THEN
+    -- Rename message_text to content
     ALTER TABLE messages RENAME COLUMN message_text TO content;
+    RAISE NOTICE 'Renamed message_text to content';
+  ELSIF has_message_text AND has_content THEN
+    -- Both exist, drop message_text (content is the new column)
+    ALTER TABLE messages DROP COLUMN message_text;
+    RAISE NOTICE 'Dropped duplicate message_text column';
+  ELSIF NOT has_message_text AND NOT has_content THEN
+    -- Neither exists, create content
+    ALTER TABLE messages ADD COLUMN content TEXT;
+    RAISE NOTICE 'Created content column';
+  ELSE
+    -- Only content exists - perfect, do nothing
+    RAISE NOTICE 'Content column already exists';
   END IF;
+
+  -- Make content nullable for multimedia messages
+  ALTER TABLE messages ALTER COLUMN content DROP NOT NULL;
 END $$;
 
--- Ensure content column exists and is nullable
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS content TEXT;
-ALTER TABLE messages ALTER COLUMN content DROP NOT NULL;
+-- Update existing messages table with multimedia support (safe adds)
+DO $$
+BEGIN
+  -- Add message_type column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'message_type'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN message_type TEXT DEFAULT 'text';
+    ALTER TABLE messages ADD CONSTRAINT messages_message_type_check CHECK (message_type IN ('text', 'image', 'video', 'audio', 'document'));
+  END IF;
+
+  -- Add media_url column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'media_url'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN media_url TEXT;
+  END IF;
+
+  -- Add media_thumbnail_url column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'media_thumbnail_url'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN media_thumbnail_url TEXT;
+  END IF;
+
+  -- Add media_duration_seconds column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'media_duration_seconds'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN media_duration_seconds INTEGER;
+  END IF;
+
+  -- Add media_file_name column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'media_file_name'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN media_file_name TEXT;
+  END IF;
+
+  -- Add media_file_size column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'media_file_size'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN media_file_size BIGINT;
+  END IF;
+
+  -- Add media_mime_type column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'media_mime_type'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN media_mime_type TEXT;
+  END IF;
+
+  -- Add delivered_at column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'delivered_at'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN delivered_at TIMESTAMPTZ;
+  END IF;
+
+  -- Add group_id column if not exists
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'messages' AND column_name = 'group_id'
+  ) THEN
+    ALTER TABLE messages ADD COLUMN group_id UUID;
+  END IF;
+
+  RAISE NOTICE 'Messages table columns updated';
+END $$;
 
 -- Create groups table
 CREATE TABLE IF NOT EXISTS groups (
