@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { MainLayout } from '@/components/layout/main-layout';
+import MobileLayout from '@/components/layout/MobileLayout';
 import { IDCard } from '@/components/ui/id-card';
 import { Loading } from '@/components/ui/loading';
 import { useMemberData } from '@/hooks/useMemberData';
@@ -15,30 +15,30 @@ const IDCardPage = () => {
 
   if (loading) {
     return (
-      <MainLayout title="Digital ID Card">
+      <MobileLayout title="Digital ID Card">
         <div className="flex justify-center items-center min-h-[400px]">
           <Loading size="lg" text="Loading your ID card..." />
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
   if (!member) {
     return (
-      <MainLayout title="Digital ID Card">
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Member profile not found. Please complete your registration.</p>
+      <MobileLayout title="Digital ID Card">
+        <div className="text-center py-8 px-4">
+          <p className="text-sm text-gray-600">Member profile not found. Please complete your registration.</p>
         </div>
-      </MainLayout>
+      </MobileLayout>
     );
   }
 
   return (
-    <MainLayout title="Digital ID Card">
-      <div className="container mx-auto px-4 py-8">
+    <MobileLayout title="Digital ID Card">
+      <div className="px-4 py-4">
         <IDCard member={member} />
       </div>
-    </MainLayout>
+    </MobileLayout>
   );
 };
 
