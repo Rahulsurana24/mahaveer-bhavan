@@ -71,7 +71,7 @@ const Profile = () => {
         .getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
-        .from('user_profiles')
+        .from('members')
         .update({ photo_url: publicUrl })
         .eq('id', member.id);
 
@@ -100,7 +100,7 @@ const Profile = () => {
 
     try {
       const { error } = await supabase
-        .from('user_profiles')
+        .from('members')
         .update({
           full_name: formData.full_name,
           email: formData.email,
