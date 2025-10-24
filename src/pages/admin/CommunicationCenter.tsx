@@ -25,6 +25,7 @@ import { TemplateManager } from '@/components/admin/TemplateManager';
 import { RecipientSelector, RecipientFilter } from '@/components/admin/RecipientSelector';
 import { MessageLogsViewer } from '@/components/admin/MessageLogsViewer';
 import { BulkMessaging } from '@/components/admin/BulkMessaging';
+import { PushNotificationManager } from '@/components/admin/PushNotificationManager';
 
 const CommunicationCenter = () => {
   const { toast } = useToast();
@@ -457,22 +458,7 @@ const CommunicationCenter = () => {
 
           {/* Push Notifications Tab */}
           <TabsContent value="push-config" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Automated Push Notification Manager
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Configure automated push notifications triggered by system events
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Push Notification configuration coming soon
-                </div>
-              </CardContent>
-            </Card>
+            <PushNotificationManager />
           </TabsContent>
         </Tabs>
 
