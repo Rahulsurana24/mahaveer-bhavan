@@ -1,12 +1,12 @@
 # 🎉 Deployment Status - Mahaveer Bhavan
 
-**Last Updated**: October 24, 2025 12:12 PM UTC
+**Last Updated**: October 24, 2025 12:15 PM UTC
 
 ---
 
 ## ✅ What Was Fixed
 
-### Error: "supabaseUrl is required"
+### Error 1: "supabaseUrl is required"
 
 **Root Cause**: Environment variables were not configured in Netlify deployment.
 
@@ -16,6 +16,18 @@
 - Triggered new production build with cleared cache
 
 **Status**: ✅ **FIXED** - Deployed successfully
+
+### Error 2: "Database error: infinite recursion detected in policy"
+
+**Root Cause**: RLS policies on `user_profiles` table were querying the same table to check permissions, causing infinite recursion.
+
+**Solution**:
+- Disabled RLS on `user_roles` table (lookup table doesn't need RLS)
+- Created `is_admin()` helper function with `SECURITY DEFINER` to bypass RLS
+- Updated all policies to use helper function instead of direct table queries
+- Executed fix via `scripts/FIX-RLS-RECURSION.sql`
+
+**Status**: ✅ **FIXED** - Database policies corrected
 
 ---
 
