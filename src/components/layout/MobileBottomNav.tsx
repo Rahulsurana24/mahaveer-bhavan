@@ -61,7 +61,7 @@ const MobileBottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#1C1C1C] via-[#252525] to-[#252525] border-t border-white/10 md:hidden shadow-2xl">
       <div className="flex justify-around items-center h-16 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -74,35 +74,37 @@ const MobileBottomNav = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center w-full h-full relative transition-colors",
+                "flex flex-col items-center justify-center w-full h-full relative transition-all duration-200",
                 isActive
-                  ? "text-primary"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-[#B8860B]"
+                  : "text-gray-400 hover:text-gray-300"
               )}
             >
               <div className="relative">
                 <Icon
                   className={cn(
-                    "h-6 w-6",
-                    isActive && "fill-current"
+                    "h-6 w-6 transition-all",
+                    isActive && "fill-current drop-shadow-lg"
                   )}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 {item.badge && item.badge > 0 && (
                   <Badge
-                    variant="destructive"
-                    className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                    className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs bg-[#00A36C] border-2 border-[#1C1C1C] text-white font-bold shadow-lg"
                   >
                     {item.badge > 9 ? "9+" : item.badge}
                   </Badge>
                 )}
               </div>
               <span className={cn(
-                "text-xs mt-1 font-medium",
-                isActive && "font-semibold"
+                "text-xs mt-1 transition-all",
+                isActive ? "font-bold text-[#B8860B]" : "font-medium text-gray-400"
               )}>
                 {item.label}
               </span>
+              {isActive && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-transparent via-[#B8860B] to-transparent rounded-b-full" />
+              )}
             </Link>
           );
         })}
