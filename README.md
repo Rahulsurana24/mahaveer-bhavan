@@ -1,17 +1,28 @@
-# Supabase CLI
+# Sree Mahaveer Seva Platform - React Native Mobile Apps
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+Modern mobile application suite for the Mahaveer Bhavan community, built with React Native and Supabase.
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+## 📱 Applications
 
-This repository contains all the functionality for Supabase CLI.
+### 1. Member App
+Mobile application for community members to:
+- Register and manage their profile with ID card generation
+- Browse and register for events and trips with dynamic pricing
+- Real-time WhatsApp-style messaging
+- Instagram-like gallery feed with media uploads
+- Make donations with integrated payment gateway
+- View personal dashboard and activity history
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+### 2. Admin App
+Administrative mobile application for:
+- Member and admin management
+- Event and trip creation with logistics planning
+- QR code-based attendance tracking
+- Gallery content moderation
+- Financial reporting and analytics
+- Dynamic form field configuration
+- System audit logs
+- Payment gateway settings
 
 ## Getting started
 
