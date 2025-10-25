@@ -1,183 +1,122 @@
-# Supabase CLI
+# Sree Mahaveer Seva Platform - React Native Mobile Apps
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+Modern mobile application suite for the Mahaveer Bhavan community, built with React Native and Supabase.
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+## 📱 Applications
 
-This repository contains all the functionality for Supabase CLI.
+### 1. Member App
+Mobile application for community members to:
+- Register and manage their profile with ID card generation
+- Browse and register for events and trips with dynamic pricing
+- Real-time WhatsApp-style messaging
+- Instagram-like gallery feed with media uploads
+- Make donations with integrated payment gateway
+- View personal dashboard and activity history
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+### 2. Admin App
+Administrative mobile application for:
+- Member and admin management
+- Event and trip creation with logistics planning
+- QR code-based attendance tracking
+- Gallery content moderation
+- Financial reporting and analytics
+- Dynamic form field configuration
+- System audit logs
+- Payment gateway settings
 
-## Getting started
+## 🏗️ Project Structure
 
-### Install the CLI
+```
+mahaveer-bhavan/
+├── member-app/           # React Native app for members
+├── admin-app/            # React Native app for administrators
+├── shared/               # Shared code and types
+├── supabase/            # Backend (edge functions & migrations)
+└── docs/                # Documentation
+```
 
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+## 🚀 Getting Started
 
+### Prerequisites
+
+- Node.js >= 18
+- React Native development environment
+- iOS: Xcode (Mac only)
+- Android: Android Studio
+- Supabase account
+
+### Installation
+
+1. **Install Member App**
 ```bash
-npm i supabase --save-dev
+cd member-app
+npm install
+cd ios && pod install && cd ..  # iOS only
 ```
 
-To install the beta release channel:
-
+2. **Install Admin App**
 ```bash
-npm i supabase@beta --save-dev
+cd admin-app
+npm install
+cd ios && pod install && cd ..  # iOS only
 ```
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+3. **Configure Environment**
 
+Create `.env` in both apps:
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 ```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
 
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
-
-<details>
-  <summary><b>macOS</b></summary>
-
-  Available via [Homebrew](https://brew.sh). To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
-  Available via [Scoop](https://scoop.sh). To install:
-
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
-
-  To upgrade:
-
-  ```powershell
-  scoop update supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Linux</b></summary>
-
-  Available via [Homebrew](https://brew.sh) and Linux packages.
-
-  #### via Homebrew
-
-  To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-
-  #### via Linux packages
-
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
-
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
-
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
-
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
-
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
-
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
-
+4. **Run the Apps**
 ```bash
-supabase bootstrap
+# Member App
+cd member-app && npm run android  # or npm run ios
+
+# Admin App
+cd admin-app && npm run android  # or npm run ios
 ```
 
-Or using npx:
+## 🗄️ Database Setup
 
-```bash
-npx supabase bootstrap
-```
+Apply migrations in `supabase/migrations/`:
+- `20251025_create_audit_log.sql` - Admin action tracking
+- `20251025_create_form_fields.sql` - Dynamic forms
+- `20251025_rename_gallery_items.sql` - Gallery table update
 
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+## 🛠️ Tech Stack
 
-## Docs
+- **React Native 0.73.2** - Mobile framework
+- **NativeWind** - Tailwind for React Native
+- **Supabase** - Backend (Auth, Database, Storage, Realtime)
+- **React Navigation v6** - Navigation
+- **AsyncStorage** - Local persistence
 
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+## 📚 Features
 
-## Breaking changes
+### Member App
+- Digital ID card with QR code
+- Event registration with dynamic pricing
+- Real-time messaging
+- Gallery with uploads
+- Donation system
 
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+### Admin App
+- Member & admin management
+- Event logistics & attendance
+- Gallery moderation
+- Analytics & reports
+- System configuration
 
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+## 📖 Documentation
 
-## Developing
+See `/docs` for detailed documentation.
 
-To run from source:
+## 📄 License
 
-```sh
-# Go >= 1.22
-go run . help
-```
+MIT License - see LICENSE file
+
+---
+
+**Migration Note:** Restructured from React web app to React Native. Backend (Supabase) unchanged.
