@@ -1,0 +1,21 @@
+// Membership Types
+export const MEMBERSHIP_TYPES = {
+  STANDARD: 'standard',
+  FAMILY: 'family',
+  PREMIUM: 'premium',
+  LIFE: 'life',
+};
+
+export const MEMBERSHIP_TYPE_LABELS = {
+  [MEMBERSHIP_TYPES.STANDARD]: 'Standard',
+  [MEMBERSHIP_TYPES.FAMILY]: 'Family',
+  [MEMBERSHIP_TYPES.PREMIUM]: 'Premium',
+  [MEMBERSHIP_TYPES.LIFE]: 'Life Member',
+};
+
+export const MEMBERSHIP_ID_PREFIXES = {
+  [MEMBERSHIP_TYPES.STANDARD]: 'STD',
+  [MEMBERSHIP_TYPES.FAMILY]: 'FAM',
+  [MEMBERSHIP_TYPES.PREMIUM]: 'PRM',
+  [MEMBERSHIP_TYPES.LIFE]: 'LIFE',
+};
