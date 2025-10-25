@@ -1,36 +1,4 @@
 {
-  "name": "MahaveerBhavan",
-  "displayName": "Mahaveer Bhavan",
-  "expo": {
-    "name": "Mahaveer Bhavan",
-    "slug": "mahaveer-bhavan-member",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.mahaverbhavan.member"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.mahaverbhavan.member",
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
-    }
-  }
+  "name": "MahaveerBhavanMember",
+  "displayName": "Mahaveer Member"
 }

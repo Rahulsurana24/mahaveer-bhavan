@@ -1,36 +1,4 @@
 {
-  "name": "MahaveerAdmin",
-  "displayName": "Mahaveer Admin",
-  "expo": {
-    "name": "Mahaveer Admin",
-    "slug": "mahaveer-bhavan-admin",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#004E89"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.mahaverbhavan.admin"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#004E89"
-      },
-      "package": "com.mahaverbhavan.admin",
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
-    }
-  }
+  "name": "MahaveerBhavanAdmin",
+  "displayName": "Mahaveer Admin"
 }
